@@ -135,11 +135,11 @@ EXPORT char* dev_cpu_debug(unsigned long addr, int *num_cycles, int *bytes)
 			*bytes = 3;
 			break;
 		default:
-			sprintf(buffer, "");
 			*num_cycles = 0;
 			*bytes = 0;
+			return NULL;
 	}
-	return buffer;	
+	return buffer;
 }
 
 #endif
