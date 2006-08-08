@@ -1,0 +1,97 @@
+#!/bin/sh
+
+VERSION=@PACKAGE_VERSION@
+prefix=@prefix@
+TEMPLATE_PATH=@datadir@/@PACKAGE@
+
+function print_usage
+{
+	echo $"Usage: emutouch OPTION... [NEW_FILE]
+      --help              print this help and exit
+      --version           print version information and exit
+      -tc, --touch-cpu    creates a new CPU emulator source file
+      -tv, --touch-video  creates a new video emulator source file
+      -td, --touch-dev    creates a new device emulator source file"
+}
+
+function touch_cpu_c
+{
+	if [ $# -eq 0 ]; then
+		cat "$TEMPLATE_PATH/cpu.c" > cpu.c
+		return
+	else
+		for file in $@; do
+			cat "$TEMPLATE_PATH/cpu.c" > $file
+		done
+	fi
+}
+
+function touch_video_c
+{
+	if [ $# -eq 0 ]; then
+		cat "$TEMPLATE_PATH/video.c" > video.c
+		return
+	else
+		for file in $@; do
+			cat "$TEMPLATE_PATH/video.c" > $file
+		done
+	fi
+}
+
+function touch_dev_c
+{
+	if [ $# -eq 0 ]; then
+		cat "$TEMPLATE_PATH/device.c" > device.c
+		return
+	else
+		for file in $@; do
+			cat "$TEMPLATE_PATH/device.c" > $file
+		done
+	fi
+}
+
+if [ $# -eq 0 ]; then
+	print_usage
+	exit 0
+fi
+
+while [ $# -gt 0 ]; do
+	
+	case "$1" in
+	
+	-v | --version)
+		echo "emutouch (libemu template file creator) $VERSION"
+		exit 0;
+		;;
+		
+	-h | --help)
+		print_usage
+		exit 0
+		;;
+
+	-tc | --touch-cpu)
+		shift
+		touch_cpu_c $@
+		exit 0
+		;;
+	  
+	-tv | --touch-video)
+		shift
+		touch_video_c $@
+		exit 0
+		;;
+	  
+	-td | --touch-device)
+		shift
+		touch_dev_c $@
+		exit 0
+		;;
+
+	*)
+		print_usage
+		exit 0
+		;;
+		
+	esac
+
+done
