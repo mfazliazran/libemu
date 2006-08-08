@@ -5,6 +5,7 @@ AC_CONFIG_SRCDIR(src/lib/libemu.c)
 AM_CONFIG_HEADER(config.h)
 
 # Checks for programs.
+AC_LIBTOOL_WIN32_DLL
 AM_PROG_LIBTOOL
 AC_PROG_INSTALL
 AC_PROG_CC
@@ -34,6 +35,7 @@ AC_CONFIG_FILES([Makefile
                  src/lib/Makefile
                  examples/Makefile
 		 examples/tutorial/Makefile
+		 examples/atari2600/Makefile
 		 src/compiler/emutouch:src/compiler/emutouch.in
 		 src/compiler/emucc:src/compiler/emucc.in])
 AC_OUTPUT
