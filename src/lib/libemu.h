@@ -10,6 +10,7 @@ void emu_message(char* message);
 
 /* CPU functions */
 int emu_cpu_init(char* filename);
+void emu_cpu_set_breakpoint(unsigned long int pos, int one_time_only);
 char* emu_cpu_name;
 char* (*emu_cpu_register_name)(int n);
 unsigned int (*emu_cpu_register_value)(int n);
