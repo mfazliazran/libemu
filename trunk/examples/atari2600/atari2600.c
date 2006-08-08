@@ -11,7 +11,7 @@ int main(int argc, char** argv)
 	emu_cpu_init("6502");
 	
 	/* Load ROM */
-	//emu_rom_load("x.rom", 0);
+	emu_rom_load("rom/simple.bin", 0 /*0xF000*/);
 
 	/* Start emulation */
 	emu_cpu_reset();
