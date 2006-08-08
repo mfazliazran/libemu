@@ -13,6 +13,8 @@ libemu API
 | CPU                                                              |
 +---+------------------------------+-------------------------------+
 |   | emu_cpu_init                 |                               |
+|   | emu_cpu_set_breakpoint       |                               |
+|   | emu_cpu_unset_breakpoint     |                               |
 | X | emu_cpu_name                 | dev_cpu_name                  |
 | X | emu_cpu_register_name        | dev_cpu_register_name         |
 | X | emu_cpu_register_value       | dev_cpu_register_value        |
