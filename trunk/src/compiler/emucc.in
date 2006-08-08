@@ -1,0 +1,84 @@
+#!/bin/sh
+
+VERSION=@PACKAGE_VERSION@
+prefix=@prefix@
+INCLUDEDIR=@includedir@
+FINAL=0
+
+function print_usage
+{
+	echo $"Usage: emucc [OPTION]... FILE
+      --help              print this help and exit
+      --version           print version information and exit
+      -f, --final         generate final version 
+                            (don't include any debugging information)"
+}
+
+while [ $# -gt 0 ]; do
+	
+	case "$1" in
+	
+	-v | --version)
+		echo "emucc (libemu device C compiler) $VERSION"
+		exit 0;
+		;;
+		
+	-h | --help)
+		print_usage
+		exit 0
+		;;
+
+	-f | --final)
+		shift
+		FINAL=1
+		;;
+	  
+	-*)
+		echo "emucc: invalid option $1"
+		exit 1
+		;;
+
+	*)
+		SOURCE=$1
+		break
+		;;
+		
+	esac
+
+done
+
+if [ $# -eq 0 ]; then
+	print_usage
+	exit 0
+fi
+
+if [ $# -gt 0 ]; then
+	case $OSTYPE in
+		*msys*) DEST=${SOURCE%.c}.dll
+			if [ $FINAL -eq 0 ]; then
+				gcc -Wall -g -c $SOURCE -I$INCLUDEDIR -DDEBUG -o ${DEST%.dll}.o
+			else
+				gcc -c $SOURCE -I$INCLUDEDIR -o $DEST
+			fi
+			if [ $? -ne 0 ]; then 
+				exit 1 
+			fi
+			if [ $FINAL -eq 0 ]; then
+				gcc -Wall -shared -DDEBUG -o $DEST ${DEST%.dll}.o -W1,--out-implib,--enable-auto-import,lib${DEST%.dll}.a
+			else
+				gcc -shared -o $DEST ${DEST%.dll}.o -W1,--out-implib,--enable-auto-import,lib${DEST%.dll}.a
+			fi
+			;;
+		*)      DEST=${SOURCE%.c}.so
+			if [ $FINAL -eq 0 ]; then
+				gcc -Wall -g -shared -I$INCLUDEDIR -DDEBUG -o $DEST $SOURCE
+			else
+				gcc -shared -I$INCLUDEDIR -o $DEST $SOURCE
+			fi
+			if [ $? -ne 0 ]; then 
+				exit 1 
+			fi
+			;;
+	esac
+	emucheck $DEST
+fi
