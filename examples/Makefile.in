@@ -86,7 +86,7 @@ RC = @RC@
 STRIP = @STRIP@
 VERSION = @VERSION@
 
-SUBDIRS = tutorial
+SUBDIRS = tutorial atari2600
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = ../config.h
 CONFIG_CLEAN_FILES = 

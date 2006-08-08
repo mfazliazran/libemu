@@ -1,1 +1,1 @@
-SUBDIRS = tutorial
+SUBDIRS = tutorial atari2600
