@@ -2,43 +2,92 @@
 #include "libemu.h"
 #include "other.h"
 
-static GtkWidget *cpu_window;
+static GtkWidget *cpu_window, *cpu_debugger;
 static int num_registers, num_flags;
 static GtkWidget *registers[255], *flags[255];
 static GtkListStore *store;
+static long int ip, previous_ip;
+static GSList* breakpoints;
 
+/* Debugger columns */
 enum
 {
-	ADDRESS = 0,
-	INSTRUCTION,
-	ICON,
-	BREAKPOINT,
-	IP_POINTER,
-	N_COLUMNS
+	ADDRESS = 0,  /* The hexa address (F432)                       */
+	BYTES,        /* The bytes that for the instruction (F4 B2 02) */
+	INSTRUCTION,  /* The instruction (MOV A 42)                    */
+	BG_COLOR,     /* The color of the cell background              */
+	LONG_ADDRESS, /* The numeric address, for consulting           */
+	N_COLUMNS     /* The number of columns                         */
 };
 
-static void update_debugger(unsigned long initial_pos)
+/* Sets the IP on the correct line on the debugger (yellow line) */
+static void set_debugger_ip()
 {
 	GtkTreeIter iter;
-	int i=0, cycles, bytes;
-	unsigned long pos = initial_pos;
+	gboolean valid, found;
+	found = FALSE;
 
+	valid = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(store), &iter);
+	do
+	{
+		long pos;
+		gtk_tree_model_get(GTK_TREE_MODEL(store), &iter, LONG_ADDRESS, &pos, -1);
+		if(pos == previous_ip)
+			gtk_list_store_set(store, &iter, BG_COLOR, NULL, -1);
+		if(pos == ip)
+			gtk_list_store_set(store, &iter, BG_COLOR, "Yellow", -1);
+	} while(gtk_tree_model_iter_next(GTK_TREE_MODEL(store), &iter));
+}
+
+/* Adjust the reference (first instruction to be decoded) on the debugger */
+static void set_debugger_reference(unsigned long initial_pos)
+{
+	GtkTreeIter iter;
+	int i=0, j, cycles, bytes;
+	unsigned long pos = initial_pos;
+	
+	gtk_list_store_clear(store);
+	gtk_tree_view_set_model(GTK_TREE_VIEW(cpu_debugger), NULL);
 	while(i<255)
 	{
-		gchar* inst = g_strdup_printf(emu_cpu_debug(pos, &cycles, &bytes));
-		if(!strcmp(inst,""))
-			break;
-		g_message(inst);
+		gchar* inst;
+		gchar* data;
+		gchar* buf = emu_cpu_debug(pos, &cycles, &bytes);
+		if(buf == NULL)
+		{
+			unsigned char bt;
+			bytes = 1;
+			bt = emu_mem_get(pos);
+			if (bt < 32 || bt > 128)
+				inst = g_strdup("DATA");
+			else
+				inst = g_strdup_printf("DATA (%c)", bt);
+			data = g_strdup_printf("%02X", bt);
+		}
+		else
+		{
+			inst = g_strdup(buf);
+			data = g_strdup_printf("%02X", emu_mem_get(pos));
+			for(j=1; j<bytes; j++)
+				data = g_strdup_printf("%s %02X", data, emu_mem_get(pos+j));
+		}
 		gtk_list_store_append(store, &iter);
 		gtk_list_store_set(store, &iter,
-				ADDRESS, g_sprintf("%04x", pos),
+				ADDRESS, g_strdup_printf("%04X", pos),
+				BYTES, data,
 				INSTRUCTION, inst,
+				BG_COLOR, NULL,
+				LONG_ADDRESS, pos,
 				-1);
+		g_free(inst);
+		g_free(data);
 		pos += bytes;
 		i++;
 	}
+	gtk_tree_view_set_model(GTK_TREE_VIEW(cpu_debugger), GTK_TREE_MODEL(store));
 }
 
+/* Set the correct values on the flags and the registers on the debugger */
 static void update_flags_and_registers()
 {
 	int i;
@@ -50,6 +99,7 @@ static void update_flags_and_registers()
 				(emu_cpu_flag_value(i) > 0));
 }
 
+/* Initialize a new CPU, loading the filename (dll or shared object) */
 int emu_cpu_init(char* filename)
 {
 	GtkWidget *debug_item;
@@ -63,11 +113,11 @@ int emu_cpu_init(char* filename)
 		        *toolitem[5],
 		          *cpu_run_pause,
 			  *cpu_step,
+			  *cpu_vblank,
 			  *reference_label,
 			  *cpu_reference,
 		    *hbox1,
 		      *scroll_debugger,
-		        *cpu_debugger,
 		      *vbox2,
 		        *frame_reg,
 			  *cpu_registers,
@@ -140,33 +190,48 @@ int emu_cpu_init(char* filename)
 	{
 		toolitem[i] = gtk_tool_item_new();
 		gtk_toolbar_insert(GTK_TOOLBAR(toolbar), GTK_TOOL_ITEM(toolitem[i]), i);
+		gtk_tool_item_set_is_important(GTK_TOOL_ITEM(toolitem[i]), TRUE);
 	}
 	cpu_run_pause = button_with_stock_image("_Run", GTK_STOCK_MEDIA_PLAY);
 	gtk_container_add(GTK_CONTAINER(toolitem[0]), cpu_run_pause);
 	cpu_step = button_with_stock_image("_Step", GTK_STOCK_MEDIA_NEXT);
 	gtk_container_add(GTK_CONTAINER(toolitem[1]), cpu_step);
+	cpu_vblank = button_with_stock_image("Go to Next _Frame", GTK_STOCK_JUSTIFY_FILL);
+	gtk_container_add(GTK_CONTAINER(toolitem[2]), cpu_vblank);
 	reference_label = gtk_label_new("Reference");
 	gtk_misc_set_padding(GTK_MISC(reference_label), 6, 6);
-	gtk_container_add(GTK_CONTAINER(toolitem[2]), reference_label);
+	gtk_container_add(GTK_CONTAINER(toolitem[3]), reference_label);
 	cpu_reference = gtk_entry_new();
 	gtk_entry_set_width_chars(GTK_ENTRY(cpu_reference), 8);
-	gtk_container_add(GTK_CONTAINER(toolitem[3]), cpu_reference);
+	gtk_container_add(GTK_CONTAINER(toolitem[4]), cpu_reference);
 	gtk_container_add(GTK_CONTAINER(handlebox), toolbar);
 
 	/* Debugger list */
-	store = gtk_list_store_new(N_COLUMNS, GDK_TYPE_PIXBUF, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN);
+	store = gtk_list_store_new(N_COLUMNS, 
+			G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_LONG);
 	cpu_debugger = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
-	renderer = gtk_cell_renderer_pixbuf_new();
-	column = gtk_tree_view_column_new_with_attributes(
-			"BP", renderer, NULL);
-	renderer = gtk_cell_renderer_text_new();
-	g_object_set(G_OBJECT(renderer), "foreground", "red", NULL);
-	column = gtk_tree_view_column_new_with_attributes(
-			"Address", renderer, "text", ADDRESS, NULL);
-	gtk_tree_view_append_column(GTK_TREE_VIEW(cpu_debugger), column);
-	column = gtk_tree_view_column_new_with_attributes(
-			"Instruction", renderer, "text", INSTRUCTION, NULL);
-	gtk_tree_view_append_column(GTK_TREE_VIEW(cpu_debugger), column);
+	gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(cpu_debugger), TRUE);
+	for(i=0; i<3; i++)
+	{
+		column = gtk_tree_view_column_new();
+		switch(i)
+		{
+			case ADDRESS:
+				gtk_tree_view_column_set_title(column, "Address");
+				break;
+			case BYTES:
+				gtk_tree_view_column_set_title(column, "Bytes");
+				break;
+			case INSTRUCTION:
+				gtk_tree_view_column_set_title(column, "Instruction");
+				break;
+		}
+		gtk_tree_view_append_column(GTK_TREE_VIEW(cpu_debugger), column);
+		renderer = gtk_cell_renderer_text_new();
+		gtk_tree_view_column_pack_start(column, renderer, TRUE);
+		gtk_tree_view_column_add_attribute(column, renderer, "text", i);
+		gtk_tree_view_column_add_attribute(column, renderer, "cell-background", BG_COLOR);
+	}
 
 	/* Debugger view */
 	hbox1 = gtk_hbox_new(FALSE, 0);
@@ -225,7 +290,9 @@ int emu_cpu_init(char* filename)
 	gtk_widget_show_all(vbox1);
 
 	update_flags_and_registers();
-	update_debugger(0);
+	set_debugger_reference(0);
+	ip = previous_ip = 0;
+	set_debugger_ip();
 
 	gtk_window_present(GTK_WINDOW(cpu_window));
 }

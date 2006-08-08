@@ -126,8 +126,7 @@ EXPORT unsigned char dev_cpu_flag_value(int n)
  * - bytes -> the number of bytes used by the instruction. It'll be more than
  *            one if the instruction recieves a parameter. 
  *
- * The function MUST return the string "Invalid" (without quotes) in case of
- * invalid opcode. */
+ * The function MUST return NULL in case of invalid opcode. */
 EXPORT char* dev_cpu_debug(unsigned long addr, int *num_cycles, int *bytes)
 {
 	switch(dev_mem_get(addr))
@@ -140,9 +139,9 @@ EXPORT char* dev_cpu_debug(unsigned long addr, int *num_cycles, int *bytes)
 			break;
 		*/
 		default:
-			sprintf(buffer, "");
 			*num_cycles = 0;
 			*bytes = 0;
+			return NULL;
 	}
 	return buffer;	
 }
