@@ -71,9 +71,9 @@ if [ $# -gt 0 ]; then
 			;;
 		*)      DEST=${SOURCE%.c}.so
 			if [ $FINAL -eq 0 ]; then
-				gcc -Wall -g -shared -I$INCLUDEDIR -DDEBUG -o $DEST $SOURCE
+				gcc -Wall -g -shared -I$INCLUDEDIR -DDEBUG -fPIC -o $DEST $SOURCE
 			else
-				gcc -shared -I$INCLUDEDIR -o $DEST $SOURCE
+				gcc -shared -I$INCLUDEDIR -fPIC -o $DEST $SOURCE
 			fi
 			if [ $? -ne 0 ]; then 
 				exit 1 
