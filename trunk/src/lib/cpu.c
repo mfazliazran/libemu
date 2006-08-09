@@ -8,12 +8,14 @@ typedef struct
 	gboolean one_time_only;
 } BKP;
 
+static gboolean cpu_loaded = FALSE;
 static GtkWidget *cpu_window, *cpu_debugger, *cpu_reference;
 static int num_registers, num_flags;
 static GtkWidget *registers[255], *flags[255];
 static GtkListStore *store;
 static long int ip, previous_ip;
 static GSList* breakpoints;
+static gchar* previous_reference;
 
 /* Debugger columns */
 enum
@@ -27,15 +29,140 @@ enum
 };
 
 /*
- * STATIC FUNCTIONS
+ * PRIVATE FUNCTIONS
  */
 
+/* Set the correct values on the flags and the registers on the debugger */
+static void update_flags_and_registers()
+{
+	int i;
+
+	if(!cpu_loaded) return;
+
+	for(i=0; i<num_registers; i++)
+		gtk_entry_set_text(GTK_ENTRY(registers[i]),
+			g_strdup_printf("%02X", emu_cpu_register_value(i)));
+	for(i=0; i<num_flags; i++)
+		gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(flags[i]),
+				(emu_cpu_flag_value(i) > 0));
+}
+
+/* Sets the IP on the correct line on the debugger (yellow line) */
+static void update_debugger(gboolean find_ip)
+{
+	GtkTreeIter iter;
+	gboolean found = FALSE;
+
+	if(!cpu_loaded) return;
+
+	gtk_tree_model_get_iter_first(GTK_TREE_MODEL(store), &iter);
+	do
+	{
+		long pos;
+		gtk_tree_model_get(GTK_TREE_MODEL(store), &iter, LONG_ADDRESS, &pos, -1);
+		if(pos == previous_ip)
+			gtk_list_store_set(store, &iter, BG_COLOR, NULL, -1);
+		if(pos == ip)
+		{
+			gtk_list_store_set(store, &iter, BG_COLOR, "Yellow", -1);
+			found = TRUE;
+		}
+	} while(gtk_tree_model_iter_next(GTK_TREE_MODEL(store), &iter));
+
+	update_flags_and_registers();
+
+	if(!found && find_ip)
+		emu_cpu_set_debugger_reference(ip);
+}
+
+/*
+ * EVENT HANDLERS
+ */
+
+/* Handle when the debugger is right clicked */
+static gboolean cpu_debugger_clicked(GtkWidget *widget, GdkEvent *event)
+{
+	GtkMenu *menu;
+	GdkEventButton *event_button;
+
+	menu = GTK_MENU(widget);
+	event_button = (GdkEventButton*)event;
+	if(event_button->button == 3)
+		gtk_menu_popup(menu, NULL, NULL, NULL, NULL,
+				event_button->button, event_button->time);
+	return FALSE;
+}
+
+/* Handle when "set breakpoint" is clicked */
+static gboolean bp_item_clicked(GtkWidget *widget, GdkEvent *event, gpointer data)
+{
+	GtkTreeSelection *selection;
+	GtkTreeIter iter;
+	GtkTreeModel *model;
+	gulong pos;
+
+	selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(cpu_debugger));
+	if(gtk_tree_selection_get_selected(selection, &model, &iter))
+	{
+		gtk_tree_model_get(model, &iter, LONG_ADDRESS, &pos, -1);
+		emu_cpu_set_breakpoint(pos, ((int)data == 1));
+	}
+	gtk_tree_selection_unselect_all(selection);
+	return FALSE;
+}
+
+/* When a new reference is set */
+static void cpu_reference_changed(GtkEntry* entry, gpointer data)
+{
+	if(emu_cpu_get_debugger_reference() < 0)
+	{
+		gtk_entry_set_text(GTK_ENTRY(cpu_reference), previous_reference);
+		return;
+	}
+
+	emu_cpu_set_debugger_reference(emu_cpu_get_debugger_reference());
+}
+
+/* When the step button is clicked */
+static void cpu_step_clicked(GtkButton* cpu_step, gpointer data)
+{
+	int num_cycles;
+
+	if(!emu_cpu_step(&num_cycles))
+	{
+		emu_error(g_strdup_printf("Instruction invalid in address 0x%04X!"));
+		return;
+	}
+	previous_ip = ip;
+	ip = emu_cpu_ip();
+	update_debugger(TRUE);
+}
+
+/*
+ * API CALLS
+ */
+
+/* Return the reference number */
+long emu_cpu_get_debugger_reference()
+{
+	gchar* hex;
+	if(!cpu_loaded) return -1;
+	hex = gtk_entry_get_text(GTK_ENTRY(cpu_reference));
+	return hex2long(hex);
+}
+
 /* Adjust the reference (first instruction to be decoded) on the debugger */
-static void set_debugger_reference(unsigned long initial_pos)
+void emu_cpu_set_debugger_reference(unsigned long initial_pos)
 {
 	GtkTreeIter iter;
 	int i=0, j, cycles, bytes;
 	unsigned long pos = initial_pos;
+
+	if(!cpu_loaded) return;
+
+	/* TODO - check if higher than memory */
+
+	previous_reference = gtk_entry_get_text(GTK_ENTRY(cpu_reference));
 	
 	gtk_list_store_clear(store);
 	gtk_tree_view_set_model(GTK_TREE_VIEW(cpu_debugger), NULL);
@@ -78,83 +205,9 @@ static void set_debugger_reference(unsigned long initial_pos)
 	gtk_tree_view_set_model(GTK_TREE_VIEW(cpu_debugger), GTK_TREE_MODEL(store));
 
 	gtk_entry_set_text(GTK_ENTRY(cpu_reference), g_strdup_printf("%04X", initial_pos));
+
+	update_debugger(FALSE);
 }
-
-/* Sets the IP on the correct line on the debugger (yellow line) */
-static void set_debugger_ip()
-{
-	GtkTreeIter iter;
-	gboolean found = FALSE;
-
-	gtk_tree_model_get_iter_first(GTK_TREE_MODEL(store), &iter);
-	do
-	{
-		long pos;
-		gtk_tree_model_get(GTK_TREE_MODEL(store), &iter, LONG_ADDRESS, &pos, -1);
-		if(pos == previous_ip)
-			gtk_list_store_set(store, &iter, BG_COLOR, NULL, -1);
-		if(pos == ip)
-		{
-			gtk_list_store_set(store, &iter, BG_COLOR, "Yellow", -1);
-			found = TRUE;
-		}
-	} while(gtk_tree_model_iter_next(GTK_TREE_MODEL(store), &iter));
-
-	if(!found)
-		set_debugger_reference(ip);
-}
-
-/* Set the correct values on the flags and the registers on the debugger */
-static void update_flags_and_registers()
-{
-	int i;
-	for(i=0; i<num_registers; i++)
-		gtk_entry_set_text(GTK_ENTRY(registers[i]),
-			g_strdup_printf("%02X", emu_cpu_register_value(i)));
-	for(i=0; i<num_flags; i++)
-		gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(flags[i]),
-				(emu_cpu_flag_value(i) > 0));
-}
-
-/*
- * FUNCTION HANDLERS
- */
-
-/* Handle when the debugger is right clicked */
-static gboolean cpu_debugger_clicked(GtkWidget *widget, GdkEvent *event)
-{
-	GtkMenu *menu;
-	GdkEventButton *event_button;
-
-	menu = GTK_MENU(widget);
-	event_button = (GdkEventButton*)event;
-	if(event_button->button == 3)
-		gtk_menu_popup(menu, NULL, NULL, NULL, NULL,
-				event_button->button, event_button->time);
-	return FALSE;
-}
-
-/* Handle when "set breakpoint" is clicked */
-static gboolean bp_item_clicked(GtkWidget *widget, GdkEvent *event, gpointer data)
-{
-	GtkTreeSelection *selection;
-	GtkTreeIter iter;
-	GtkTreeModel *model;
-	gulong pos;
-
-	selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(cpu_debugger));
-	if(gtk_tree_selection_get_selected(selection, &model, &iter))
-	{
-		gtk_tree_model_get(model, &iter, LONG_ADDRESS, &pos, -1);
-		emu_cpu_set_breakpoint(pos, (data == 1));
-	}
-	gtk_tree_selection_unselect_all(selection);
-	return FALSE;
-}
-
-/*
- * API CALLS
- */
 
 /* Set a new breakpoint */
 void emu_cpu_set_breakpoint(unsigned long int pos, int one_time_only)
@@ -162,6 +215,8 @@ void emu_cpu_set_breakpoint(unsigned long int pos, int one_time_only)
 	GtkTreeIter iter;
 	GSList *list;
 	BKP *bkp;
+
+	if(!cpu_loaded) return;
 
 	/* check if there's already a breakpoint here */
 	list = breakpoints;
@@ -217,6 +272,14 @@ int emu_cpu_init(char* filename)
 	GtkCellRenderer *renderer;
 	GtkWidget *popup_menu, 
 		  *bp_item, *bp_once_item;
+
+	if(cpu_loaded)
+	{
+		emu_error("A CPU was already loaded.");
+		return 0;
+	}
+
+	/* TODO - check if there's memory already */
 
 	/* create path (g_module_open requires a full path) */
 	if(filename[0] == '.' || filename[0] == '/' || filename[0] == '~')
@@ -286,6 +349,8 @@ int emu_cpu_init(char* filename)
 	cpu_run_pause = button_with_stock_image("_Run", GTK_STOCK_MEDIA_PLAY);
 	gtk_container_add(GTK_CONTAINER(toolitem[0]), cpu_run_pause);
 	cpu_step = button_with_stock_image("_Step", GTK_STOCK_MEDIA_NEXT);
+	g_signal_connect_swapped(cpu_step, "clicked",
+			G_CALLBACK(cpu_step_clicked), NULL);
 	gtk_container_add(GTK_CONTAINER(toolitem[1]), cpu_step);
 	cpu_vblank = button_with_stock_image("Go to Next _Frame", GTK_STOCK_JUSTIFY_FILL);
 	gtk_container_add(GTK_CONTAINER(toolitem[2]), cpu_vblank);
@@ -295,6 +360,9 @@ int emu_cpu_init(char* filename)
 	cpu_reference = gtk_entry_new();
 	gtk_entry_set_width_chars(GTK_ENTRY(cpu_reference), 8);
 	gtk_container_add(GTK_CONTAINER(toolitem[4]), cpu_reference);
+	g_signal_connect_swapped(cpu_reference, "activate",
+			G_CALLBACK(cpu_reference_changed), NULL);
+
 	gtk_container_add(GTK_CONTAINER(handlebox), toolbar);
 
 	/* Debugger list */
@@ -360,7 +428,7 @@ int emu_cpu_init(char* filename)
 	g_signal_connect_swapped(cpu_debugger, "button_press_event",
 			G_CALLBACK(cpu_debugger_clicked), popup_menu);
 	g_signal_connect_swapped(bp_item, "button_press_event",
-			G_CALLBACK(bp_item_clicked), 1);
+			G_CALLBACK(bp_item_clicked), (gpointer)1);
 	g_signal_connect_swapped(bp_once_item, "button_press_event",
 			G_CALLBACK(bp_item_clicked), 0);
 	gtk_widget_show_all(popup_menu);
@@ -394,10 +462,13 @@ int emu_cpu_init(char* filename)
 
 	gtk_widget_show_all(vbox1);
 
-	update_flags_and_registers();
-	set_debugger_reference(0);
+	emu_cpu_set_debugger_reference(0);
 	ip = previous_ip = 0;
-	set_debugger_ip();
+	update_debugger(TRUE);
 
 	gtk_window_present(GTK_WINDOW(cpu_window));
+
+	cpu_loaded = TRUE;
+
+	return 1;
 }

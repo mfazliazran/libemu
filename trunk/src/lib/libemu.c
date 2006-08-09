@@ -55,3 +55,8 @@ void emu_message(char* message)
 {
 	g_message(message);
 }
+
+void emu_error(char* message)
+{
+	g_error(message);
+}

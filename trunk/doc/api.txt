@@ -1,41 +1,43 @@
 libemu API
 ==========
 
-+---+------------------------------+-------------------------------+
-| * |    Callable from main app    |     Callable from devices     |
-+---+------------------------------+-------------------------------+
++---+-------------------------------+-------------------------------+
+| * |    Callable from main app     |     Callable from devices     |
++---+-------------------------------+-------------------------------+
 | GENERAL                                                          |
-+---+------------------------------+-------------------------------+
-|   | emu_init                     |                               |
-|   | emu_main                     |                               |
-|   | emu_message                  | dev_message                   |
-+---+------------------------------+-------------------------------+
-| CPU                                                              |
-+---+------------------------------+-------------------------------+
-|   | emu_cpu_init                 |                               |
-|   | emu_cpu_set_breakpoint       |                               |
-|   | emu_cpu_unset_breakpoint     |                               |
-| X | emu_cpu_name                 | dev_cpu_name                  |
-| X | emu_cpu_register_name        | dev_cpu_register_name         |
-| X | emu_cpu_register_value       | dev_cpu_register_value        |
-| X | emu_cpu_flag_name            | dev_cpu_flag_name             |
-| X | emu_cpu_flag_value           | dev_cpu_flag_value            |
-| X | emu_cpu_debug                | dev_cpu_debug                 |
-| X | emu_cpu_reset                | dev_cpu_reset                 |
-| X | emu_cpu_ip                   | dev_cpu_ip                    |
-| X | emu_cpu_step                 | dev_cpu_step                  |
-+---+------------------------------+-------------------------------+
-| MEMORY                                                           |
-+---+------------------------------+-------------------------------+
-|   | emu_mem_init                 |                               |
-|   | emu_mem_init_k               |                               |
-|   | emu_mem_get                  | dev_mem_get                   |
-|   | emu_mem_set                  | dev_mem_set                   |
-|   | emu_mem_set_direct           | dev_mem_set_direct            |
-+---+------------------------------+-------------------------------+
-| ROM                                                              |
-+---+------------------------------+-------------------------------+
-|   | emu_rom_load                 |                               |
-+---+------------------------------+-------------------------------+
++---+-------------------------------+-------------------------------+
+|   | emu_init                      |                               |
+|   | emu_main                      |                               |
+|   | emu_message                   | dev_message                   |
++---+-------------------------------+-------------------------------+
+| CPU                                                               |
++---+-------------------------------+-------------------------------+
+|   | emu_cpu_init                  |                               |
+|   | emu_cpu_get_debugger_reference|                               |
+|   | emu_cpu_set_debugger_reference|                               |
+|   | emu_cpu_set_breakpoint        |                               |
+|   | emu_cpu_unset_breakpoint      |                               |
+| X | emu_cpu_name                  | dev_cpu_name                  |
+| X | emu_cpu_register_name         | dev_cpu_register_name         |
+| X | emu_cpu_register_value        | dev_cpu_register_value        |
+| X | emu_cpu_flag_name             | dev_cpu_flag_name             |
+| X | emu_cpu_flag_value            | dev_cpu_flag_value            |
+| X | emu_cpu_debug                 | dev_cpu_debug                 |
+| X | emu_cpu_reset                 | dev_cpu_reset                 |
+| X | emu_cpu_ip                    | dev_cpu_ip                    |
+| X | emu_cpu_step                  | dev_cpu_step                  |
++---+-------------------------------+-------------------------------+
+| MEMORY                                                            |
++---+-------------------------------+-------------------------------+
+|   | emu_mem_init                  |                               |
+|   | emu_mem_init_k                |                               |
+|   | emu_mem_get                   | dev_mem_get                   |
+|   | emu_mem_set                   | dev_mem_set                   |
+|   | emu_mem_set_direct            | dev_mem_set_direct            |
++---+-------------------------------+-------------------------------+
+| ROM                                                               |
++---+-------------------------------+-------------------------------+
+|   | emu_rom_load                  |                               |
++---+-------------------------------+-------------------------------+
 
 * Function that must be implemented by the user.

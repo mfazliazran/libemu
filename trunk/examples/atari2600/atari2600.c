@@ -8,8 +8,8 @@ int main(int argc, char** argv)
 	
 	/* Initialize components */
 	emu_mem_init_k(64);
-	emu_cpu_init("6502");
-	
+	emu_cpu_init("6502");	
+
 	/* Load ROM */
 	emu_rom_load("rom/simple.bin", 0 /*0xF000*/);
 
