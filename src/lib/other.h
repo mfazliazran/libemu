@@ -5,6 +5,7 @@
 
 int connect_callbacks(GModule* mod);
 GtkWidget* button_with_stock_image(gchar* mnemonic, gchar* stock);
+long hex2long(char* hex);
 
 GtkWidget* window;
 GtkWidget* menu;

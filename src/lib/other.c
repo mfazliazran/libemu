@@ -1,3 +1,4 @@
+#include <string.h>
 #include "libemu.h"
 #include "other.h"
 
@@ -44,4 +45,38 @@ GtkWidget* button_with_stock_image(gchar* mnemonic, gchar* stock)
 	gtk_widget_show_all(alignment);
 
 	return button;
+}
+
+long hex2long(char* hex)
+{
+	int size = strlen(hex);
+	int i, factor = 1;
+	long val = 0;
+	if(size == 0)
+		return -1;
+	for(i=(size-1); i>=0; i--)
+	{
+		switch(hex[i])
+		{
+			case '0': break;
+			case '1': val += 1 * factor; break;
+			case '2': val += 2 * factor; break;
+			case '3': val += 3 * factor; break;
+			case '4': val += 4 * factor; break;
+			case '5': val += 5 * factor; break;
+			case '6': val += 6 * factor; break;
+			case '7': val += 7 * factor; break;
+			case '8': val += 8 * factor; break;
+			case '9': val += 9 * factor; break;
+			case 'A': case 'a': val += 10 * factor; break;
+			case 'B': case 'b': val += 11 * factor; break;
+			case 'C': case 'c': val += 12 * factor; break;
+			case 'D': case 'd': val += 13 * factor; break;
+			case 'E': case 'e': val += 14 * factor; break;
+			case 'F': case 'f': val += 15 * factor; break;
+			default: return -1;
+		}
+		factor *= 16;
+	}
+	return val;
 }
