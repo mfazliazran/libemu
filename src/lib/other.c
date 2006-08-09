@@ -36,7 +36,7 @@ GtkWidget* button_with_stock_image(gchar* mnemonic, gchar* stock)
 	hbox = gtk_hbox_new(FALSE, 2);
 	gtk_container_add(GTK_CONTAINER(alignment), hbox);
 
-	image = gtk_image_new_from_stock(stock, GTK_ICON_SIZE_BUTTON);
+	image = gtk_image_new_from_stock(stock, GTK_ICON_SIZE_SMALL_TOOLBAR);
 	gtk_box_pack_start(GTK_BOX(hbox), image, FALSE, FALSE, 0);
 
 	label = gtk_label_new_with_mnemonic(mnemonic);
