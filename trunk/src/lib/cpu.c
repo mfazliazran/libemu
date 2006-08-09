@@ -8,14 +8,21 @@ typedef struct
 	gboolean one_time_only;
 } BKP;
 
+/* Variables */
 static gboolean cpu_loaded = FALSE;
-static GtkWidget *cpu_window, *cpu_debugger, *cpu_reference;
+static gboolean running = FALSE;
+static GtkWidget *cpu_window, *cpu_debugger, *cpu_reference, *cpu_step, 
+		 *cpu_vblank;
+static GtkWidget *run_image, *run_label;
 static int num_registers, num_flags;
 static GtkWidget *registers[255], *flags[255];
 static GtkListStore *store;
 static long int ip, previous_ip;
 static GSList* breakpoints;
 static gchar* previous_reference;
+
+/* Prototypes */
+static void cpu_run_pause_clicked(GtkButton* cpu_run_pause, gpointer data);
 
 /* Debugger columns */
 enum
@@ -75,6 +82,48 @@ static void update_debugger(gboolean find_ip)
 		emu_cpu_set_debugger_reference(ip);
 }
 
+/* Thread that runs the emulator */
+gboolean run()
+{
+	GSList *list;
+	BKP *bkp;
+	int num_cycles;
+
+	previous_ip = ip;
+	while(running)
+	{
+		if(!emu_cpu_step(&num_cycles))
+		{
+			emu_error(g_strdup_printf("Instruction invalid in address 0x%04X!", emu_cpu_ip()));
+			cpu_run_pause_clicked(NULL, NULL);
+			update_debugger(TRUE);
+			return FALSE;
+		}
+		ip = emu_cpu_ip();
+
+		/* check if it's a breakpoint */
+		list = breakpoints;
+		while(list)
+		{
+			if(((BKP*)(list->data))->pos == ip)
+			{
+				/* breakpoint found! */
+				cpu_run_pause_clicked(NULL, NULL);
+				/* check if it's a weak breakpoint */
+				if(((BKP*)(list->data))->one_time_only)
+					g_slist_remove(list, ((BKP*)(list->data)));
+				update_debugger(TRUE);
+				return FALSE;
+			}
+			list = list->next;
+		}
+		
+		gtk_main_iteration_do(FALSE);
+	}
+	update_debugger(TRUE);
+	return FALSE;
+}
+
 /*
  * EVENT HANDLERS
  */
@@ -130,12 +179,36 @@ static void cpu_step_clicked(GtkButton* cpu_step, gpointer data)
 
 	if(!emu_cpu_step(&num_cycles))
 	{
-		emu_error(g_strdup_printf("Instruction invalid in address 0x%04X!"));
+		emu_error(g_strdup_printf("Instruction invalid in address 0x%04X!", ip));
 		return;
 	}
 	previous_ip = ip;
 	ip = emu_cpu_ip();
 	update_debugger(TRUE);
+}
+
+/* When the button Run/Pause is clicked */
+static void cpu_run_pause_clicked(GtkButton* cpu_run_pause, gpointer data)
+{
+	if(!running)
+	{
+		gtk_label_set_text_with_mnemonic(GTK_LABEL(run_label), "_Pause");
+		gtk_image_set_from_stock(GTK_IMAGE(run_image), GTK_STOCK_MEDIA_PAUSE, GTK_ICON_SIZE_SMALL_TOOLBAR);
+		gtk_widget_set_sensitive(cpu_step, FALSE);
+		gtk_widget_set_sensitive(cpu_vblank, FALSE);
+		gtk_widget_set_sensitive(cpu_reference, FALSE);
+		running = TRUE;
+		g_idle_add_full(G_PRIORITY_HIGH_IDLE, run, NULL, NULL);
+	}
+	else
+	{
+		running = FALSE;
+		gtk_label_set_text_with_mnemonic(GTK_LABEL(run_label), "_Run");
+		gtk_image_set_from_stock(GTK_IMAGE(run_image), GTK_STOCK_MEDIA_PLAY, GTK_ICON_SIZE_SMALL_TOOLBAR);
+		gtk_widget_set_sensitive(cpu_step, TRUE);
+		gtk_widget_set_sensitive(cpu_vblank, TRUE);
+		gtk_widget_set_sensitive(cpu_reference, TRUE);
+	}
 }
 
 /*
@@ -257,8 +330,6 @@ int emu_cpu_init(char* filename)
 		    *handlebox,
 		      *toolbar,
 		          *cpu_run_pause,
-			  *cpu_step,
-			  *cpu_vblank,
 			  *reference_label,
 		    *hbox1,
 		      *scroll_debugger,
@@ -346,7 +417,25 @@ int emu_cpu_init(char* filename)
 		gtk_toolbar_insert(GTK_TOOLBAR(toolbar), GTK_TOOL_ITEM(toolitem[i]), i);
 		gtk_tool_item_set_is_important(GTK_TOOL_ITEM(toolitem[i]), TRUE);
 	}
-	cpu_run_pause = button_with_stock_image("_Run", GTK_STOCK_MEDIA_PLAY);
+	cpu_run_pause = gtk_button_new();
+	{
+		GtkWidget *alignment, *hbox;
+
+		alignment = gtk_alignment_new(0.5, 0.5, 0, 0);
+		gtk_container_add(GTK_CONTAINER(cpu_run_pause), alignment);
+
+		hbox = gtk_hbox_new(FALSE, 2);
+		gtk_container_add(GTK_CONTAINER(alignment), hbox);
+
+		run_image = gtk_image_new_from_stock(GTK_STOCK_MEDIA_PLAY, GTK_ICON_SIZE_SMALL_TOOLBAR);
+		gtk_box_pack_start(GTK_BOX(hbox), run_image, FALSE, FALSE, 0);
+
+		run_label = gtk_label_new_with_mnemonic("_Run");
+		gtk_box_pack_start(GTK_BOX(hbox), run_label, FALSE, FALSE, 0);
+	}
+
+	g_signal_connect_swapped(cpu_run_pause, "clicked",
+			G_CALLBACK(cpu_run_pause_clicked), NULL);
 	gtk_container_add(GTK_CONTAINER(toolitem[0]), cpu_run_pause);
 	cpu_step = button_with_stock_image("_Step", GTK_STOCK_MEDIA_NEXT);
 	g_signal_connect_swapped(cpu_step, "clicked",
