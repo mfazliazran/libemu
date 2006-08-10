@@ -345,9 +345,11 @@ int emu_cpu_init(char* filename)
 		    *handlebox,
 		      *toolbar,
 		          *cpu_run_pause,
-			  *reference_label,
 		    *hbox1,
-		      *scroll_debugger,
+		      *vbox3,
+		        *scroll_debugger,
+			*hbox2,
+			  *reference_label,
 		      *vbox2,
 		        *frame_reg,
 			  *cpu_registers,
@@ -458,14 +460,6 @@ int emu_cpu_init(char* filename)
 	gtk_container_add(GTK_CONTAINER(toolitem[1]), cpu_step);
 	cpu_vblank = button_with_stock_image("Go to Next _Frame", GTK_STOCK_JUSTIFY_FILL);
 	gtk_container_add(GTK_CONTAINER(toolitem[2]), cpu_vblank);
-	reference_label = gtk_label_new("Reference");
-	gtk_misc_set_padding(GTK_MISC(reference_label), 6, 6);
-	gtk_container_add(GTK_CONTAINER(toolitem[3]), reference_label);
-	cpu_reference = gtk_entry_new();
-	gtk_entry_set_width_chars(GTK_ENTRY(cpu_reference), 8);
-	gtk_container_add(GTK_CONTAINER(toolitem[4]), cpu_reference);
-	g_signal_connect_swapped(cpu_reference, "activate",
-			G_CALLBACK(cpu_reference_changed), NULL);
 
 	gtk_container_add(GTK_CONTAINER(handlebox), toolbar);
 
@@ -498,9 +492,24 @@ int emu_cpu_init(char* filename)
 
 	/* Debugger view */
 	hbox1 = gtk_hbox_new(FALSE, 0);
+	vbox3 = gtk_vbox_new(FALSE, 6);
+
+	hbox2 = gtk_hbox_new(FALSE, 6);
+	reference_label = gtk_label_new("Reference");
+	//gtk_misc_set_padding(GTK_MISC(reference_label), 6, 6);
+	gtk_box_pack_start(GTK_BOX(hbox2), reference_label, FALSE, FALSE, 6);
+	cpu_reference = gtk_entry_new();
+	gtk_entry_set_width_chars(GTK_ENTRY(cpu_reference), 8);
+	gtk_box_pack_start(GTK_BOX(hbox2), cpu_reference, FALSE, FALSE, 0);
+	g_signal_connect_swapped(cpu_reference, "activate",
+			G_CALLBACK(cpu_reference_changed), NULL);
+	gtk_box_pack_start(GTK_BOX(vbox3), hbox2, FALSE, FALSE, 0);
+
 	scroll_debugger = gtk_scrolled_window_new(NULL, NULL);
 	gtk_container_add(GTK_CONTAINER(scroll_debugger), cpu_debugger);
-	gtk_box_pack_start(GTK_BOX(hbox1), scroll_debugger, TRUE, TRUE, 0);
+	gtk_box_pack_start(GTK_BOX(vbox3), scroll_debugger, TRUE, TRUE, 0);
+
+	gtk_box_pack_start(GTK_BOX(hbox1), vbox3, TRUE, TRUE, 0);
 
 	/* Registers/flags */
 	vbox2 = gtk_vbox_new(FALSE, 0);
@@ -514,7 +523,7 @@ int emu_cpu_init(char* filename)
 	cpu_flags = gtk_vbox_new(FALSE, 0);
 	gtk_container_add(GTK_CONTAINER(frame_flag), cpu_flags);
 	gtk_box_pack_start(GTK_BOX(hbox1), vbox2, FALSE, FALSE, 12);
-	
+
 	/* Statusbar */
 	cpu_statusbar = gtk_statusbar_new();
 
