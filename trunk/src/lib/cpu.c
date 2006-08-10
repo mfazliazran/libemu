@@ -39,6 +39,28 @@ enum
  * PRIVATE FUNCTIONS
  */
 
+/* Returns if a given position has a breakpoint */
+static gboolean is_breakpoint(unsigned long int pos, gboolean delete_weak)
+{
+	GSList *list;
+
+	list = breakpoints;
+
+	while(list)
+	{
+		if(((BKP*)(list->data))->pos == pos)
+		{
+			/* check if it's a weak breakpoint */
+			if(delete_weak)
+				if(((BKP*)(list->data))->one_time_only)
+					breakpoints = g_slist_remove(breakpoints, list->data);
+			return TRUE;
+		}
+		list = list->next;
+	}
+	return FALSE;
+}
+
 /* Set the correct values on the flags and the registers on the debugger */
 static void update_flags_and_registers()
 {
@@ -68,7 +90,10 @@ static void update_debugger(gboolean find_ip)
 		long pos;
 		gtk_tree_model_get(GTK_TREE_MODEL(store), &iter, LONG_ADDRESS, &pos, -1);
 		if(pos == previous_ip)
-			gtk_list_store_set(store, &iter, BG_COLOR, NULL, -1);
+			if(is_breakpoint(previous_ip, FALSE))
+				gtk_list_store_set(store, &iter, BG_COLOR, "Red", -1);
+			else
+				gtk_list_store_set(store, &iter, BG_COLOR, NULL, -1);
 		if(pos == ip)
 		{
 			gtk_list_store_set(store, &iter, BG_COLOR, "Yellow", -1);
@@ -85,7 +110,6 @@ static void update_debugger(gboolean find_ip)
 /* Thread that runs the emulator */
 gboolean run()
 {
-	GSList *list;
 	BKP *bkp;
 	int num_cycles;
 
@@ -102,22 +126,13 @@ gboolean run()
 		ip = emu_cpu_ip();
 
 		/* check if it's a breakpoint */
-		list = breakpoints;
-		while(list)
+		if(is_breakpoint(ip, TRUE))
 		{
-			if(((BKP*)(list->data))->pos == ip)
-			{
-				/* breakpoint found! */
-				cpu_run_pause_clicked(NULL, NULL);
-				/* check if it's a weak breakpoint */
-				if(((BKP*)(list->data))->one_time_only)
-					g_slist_remove(list, ((BKP*)(list->data)));
-				update_debugger(TRUE);
-				return FALSE;
-			}
-			list = list->next;
+			cpu_run_pause_clicked(NULL, NULL);
+			update_debugger(TRUE);
+			return FALSE;
 		}
-		
+
 		gtk_main_iteration_do(FALSE);
 	}
 	update_debugger(TRUE);
@@ -143,7 +158,7 @@ static gboolean cpu_debugger_clicked(GtkWidget *widget, GdkEvent *event)
 }
 
 /* Handle when "set breakpoint" is clicked */
-static gboolean bp_item_clicked(GtkWidget *widget, GdkEvent *event, gpointer data)
+static gboolean bp_item_clicked(GtkWidget *widget, GdkEventButton *event, gpointer data)
 {
 	GtkTreeSelection *selection;
 	GtkTreeIter iter;
@@ -154,7 +169,7 @@ static gboolean bp_item_clicked(GtkWidget *widget, GdkEvent *event, gpointer dat
 	if(gtk_tree_selection_get_selected(selection, &model, &iter))
 	{
 		gtk_tree_model_get(model, &iter, LONG_ADDRESS, &pos, -1);
-		emu_cpu_set_breakpoint(pos, ((int)data == 1));
+		emu_cpu_set_breakpoint(pos, GPOINTER_TO_INT(data));
 	}
 	gtk_tree_selection_unselect_all(selection);
 	return FALSE;
@@ -303,8 +318,8 @@ void emu_cpu_set_breakpoint(unsigned long int pos, int one_time_only)
 	/* add the new breakpoint */
 	bkp = g_malloc(sizeof(BKP));
 	bkp->pos = pos;
-	bkp->one_time_only = (one_time_only != 0);
-	g_slist_append(breakpoints, bkp);
+	bkp->one_time_only = one_time_only;
+	breakpoints = g_slist_append(breakpoints, bkp);
 
 	/* update the debugger */
 	gtk_tree_model_get_iter_first(GTK_TREE_MODEL(store), &iter);
@@ -516,10 +531,10 @@ int emu_cpu_init(char* filename)
 	gtk_menu_shell_append(GTK_MENU_SHELL(popup_menu), bp_once_item);
 	g_signal_connect_swapped(cpu_debugger, "button_press_event",
 			G_CALLBACK(cpu_debugger_clicked), popup_menu);
-	g_signal_connect_swapped(bp_item, "button_press_event",
-			G_CALLBACK(bp_item_clicked), (gpointer)1);
-	g_signal_connect_swapped(bp_once_item, "button_press_event",
-			G_CALLBACK(bp_item_clicked), 0);
+	g_signal_connect(bp_item, "button_press_event",
+			G_CALLBACK(bp_item_clicked), GINT_TO_POINTER(FALSE));
+	g_signal_connect(bp_once_item, "button_press_event",
+			G_CALLBACK(bp_item_clicked), GINT_TO_POINTER(TRUE));
 	gtk_widget_show_all(popup_menu);
 
 	/* Add registers and flags */
