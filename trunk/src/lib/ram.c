@@ -1,8 +1,8 @@
 #include "libemu.h"
 #include "other.h"
 
-unsigned char* ram;
-unsigned long size;
+unsigned char* ram = NULL;
+unsigned long int size = 0;
 
 void emu_mem_init(unsigned long sz)
 {
@@ -37,4 +37,9 @@ unsigned char emu_mem_get(unsigned long int pos)
 		g_critical("Trying to read outside memory bounds, from position 0x%x!", pos);
 	else
 		return ram[pos];
+}
+
+unsigned long int emu_mem_size()
+{
+	return size;
 }
