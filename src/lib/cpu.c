@@ -14,6 +14,7 @@ static gboolean running = FALSE;
 static GtkWidget *cpu_window, *cpu_debugger, *cpu_reference, *cpu_step, 
 		 *cpu_vblank;
 static GtkWidget *run_image, *run_label;
+GtkWidget *popup_menu, *popup_menu_unset;
 static int num_registers, num_flags;
 static GtkWidget *registers[255], *flags[255];
 static GtkListStore *store;
@@ -146,14 +147,32 @@ gboolean run()
 /* Handle when the debugger is right clicked */
 static gboolean cpu_debugger_clicked(GtkWidget *widget, GdkEvent *event)
 {
-	GtkMenu *menu;
 	GdkEventButton *event_button;
+	GtkTreeIter iter;
+	GtkTreePath *path;
+	GtkTreeModel *model;
+	gulong pos;
 
 	menu = GTK_MENU(widget);
 	event_button = (GdkEventButton*)event;
-	if(event_button->button == 3)
-		gtk_menu_popup(menu, NULL, NULL, NULL, NULL,
-				event_button->button, event_button->time);
+	if(event_button->button != 3)
+		return FALSE;
+	
+	if(gtk_tree_view_get_path_at_pos(GTK_TREE_VIEW(cpu_debugger),
+				(gint)event_button->x, (gint)event_button->y,
+				&path, NULL, NULL, NULL))
+	{
+		model = gtk_tree_view_get_model(GTK_TREE_VIEW(cpu_debugger));
+		if(gtk_tree_model_get_iter(model, &iter, path))
+		{
+			gtk_tree_model_get(model, &iter, LONG_ADDRESS, &pos, -1);
+			if(is_breakpoint(pos, FALSE))
+				gtk_menu_popup(GTK_MENU(popup_menu_unset), NULL, NULL, NULL, NULL, event_button->button, event_button->time);
+			else
+				gtk_menu_popup(GTK_MENU(popup_menu), NULL, NULL, NULL, NULL, event_button->button, event_button->time);
+		}
+	}
+	
 	return FALSE;
 }
 
@@ -170,6 +189,24 @@ static gboolean bp_item_clicked(GtkWidget *widget, GdkEventButton *event, gpoint
 	{
 		gtk_tree_model_get(model, &iter, LONG_ADDRESS, &pos, -1);
 		emu_cpu_set_breakpoint(pos, GPOINTER_TO_INT(data));
+	}
+	gtk_tree_selection_unselect_all(selection);
+	return FALSE;
+}
+
+/* Handle when "unset breakpoint" is clicked */
+static gboolean bp_item_unset_clicked(GtkWidget *widget, GdkEventButton *event, gpointer data)
+{
+	GtkTreeSelection *selection;
+	GtkTreeIter iter;
+	GtkTreeModel *model;
+	gulong pos;
+
+	selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(cpu_debugger));
+	if(gtk_tree_selection_get_selected(selection, &model, &iter))
+	{
+		gtk_tree_model_get(model, &iter, LONG_ADDRESS, &pos, -1);
+		emu_cpu_unset_breakpoint(pos);
 	}
 	gtk_tree_selection_unselect_all(selection);
 	return FALSE;
@@ -332,12 +369,50 @@ void emu_cpu_set_breakpoint(unsigned long int pos, int one_time_only)
 	} while(gtk_tree_model_iter_next(GTK_TREE_MODEL(store), &iter));
 }
 
+/* Set a new breakpoint */
+void emu_cpu_unset_breakpoint(unsigned long int pos)
+{
+	GtkTreeIter iter;
+	GSList *list;
+	BKP *bkp;
+	gboolean ok = FALSE;
+
+	if(!cpu_loaded) return;
+
+	/* delete the breakpoint */
+	list = breakpoints;
+	while(list)
+	{
+		if(((BKP*)(list->data))->pos == pos)
+		{
+			breakpoints = g_slist_remove(breakpoints, list->data);
+			ok = TRUE;
+			break;
+		}
+		list = list->next;
+	}
+	if(!ok) return;
+
+	/* update the debugger */
+	gtk_tree_model_get_iter_first(GTK_TREE_MODEL(store), &iter);
+	do
+	{
+		long c;
+		gtk_tree_model_get(GTK_TREE_MODEL(store), &iter, LONG_ADDRESS, &c, -1);
+		if(c == pos)
+			if(pos == ip)
+				gtk_list_store_set(store, &iter, BG_COLOR, "Yellow", -1);
+			else
+				gtk_list_store_set(store, &iter, BG_COLOR, NULL, -1);
+	} while(gtk_tree_model_iter_next(GTK_TREE_MODEL(store), &iter));
+}
+
 /* Initialize a new CPU, loading the filename (dll or shared object) */
 int emu_cpu_init(char* filename)
 {
 	GtkWidget *debug_item;
-	GModule* cpu_mod;
-	gchar* path;
+	GModule *cpu_mod;
+	gchar *path, *type;
 
 	int i;
 	GtkWidget *toolitem[5];
@@ -358,8 +433,7 @@ int emu_cpu_init(char* filename)
 		    *cpu_statusbar;
 	GtkTreeViewColumn *column;
 	GtkCellRenderer *renderer;
-	GtkWidget *popup_menu, 
-		  *bp_item, *bp_once_item;
+	GtkWidget *bp_item, *bp_once_item, *bp_item_unset;
 
 	if(cpu_loaded)
 	{
@@ -367,7 +441,11 @@ int emu_cpu_init(char* filename)
 		return 0;
 	}
 
-	/* TODO - check if there's memory already */
+	if(emu_mem_size() == 0)
+	{
+		emu_error("The memory size wasn't set yet!");
+		return 0;
+	}
 
 	/* create path (g_module_open requires a full path) */
 	if(filename[0] == '.' || filename[0] == '/' || filename[0] == '~')
@@ -383,7 +461,11 @@ int emu_cpu_init(char* filename)
 		return 0;
 	}
 
-	/* TODO - check if it's really a CPU */
+	/* check if it's really a CPU */
+	if(!g_module_symbol(cpu_mod, "dev_type", (gpointer*)&type))
+		g_error("variable dev_type not defined in %s", path);
+	if(strcmp(type, "cpu"))
+		g_error("%s not a CPU file.", path);
 
 	/* Connect functions */
 	if(!g_module_symbol(cpu_mod, "dev_cpu_name", (gpointer*)&emu_cpu_name))
@@ -489,6 +571,8 @@ int emu_cpu_init(char* filename)
 		gtk_tree_view_column_add_attribute(column, renderer, "text", i);
 		gtk_tree_view_column_add_attribute(column, renderer, "cell-background", BG_COLOR);
 	}
+	g_signal_connect_swapped(cpu_debugger, "button_press_event",
+			G_CALLBACK(cpu_debugger_clicked), NULL);
 
 	/* Debugger view */
 	hbox1 = gtk_hbox_new(FALSE, 0);
@@ -538,13 +622,18 @@ int emu_cpu_init(char* filename)
 	gtk_menu_shell_append(GTK_MENU_SHELL(popup_menu), bp_item);
 	bp_once_item = gtk_menu_item_new_with_label("Set one-time-only breakpoint");
 	gtk_menu_shell_append(GTK_MENU_SHELL(popup_menu), bp_once_item);
-	g_signal_connect_swapped(cpu_debugger, "button_press_event",
-			G_CALLBACK(cpu_debugger_clicked), popup_menu);
 	g_signal_connect(bp_item, "button_press_event",
 			G_CALLBACK(bp_item_clicked), GINT_TO_POINTER(FALSE));
 	g_signal_connect(bp_once_item, "button_press_event",
 			G_CALLBACK(bp_item_clicked), GINT_TO_POINTER(TRUE));
 	gtk_widget_show_all(popup_menu);
+
+	popup_menu_unset = gtk_menu_new();
+	bp_item_unset = gtk_menu_item_new_with_label("Unset breakpoint");
+	gtk_menu_shell_append(GTK_MENU_SHELL(popup_menu_unset), bp_item_unset);
+	g_signal_connect(bp_item_unset, "button_press_event",
+			G_CALLBACK(bp_item_unset_clicked), NULL);
+	gtk_widget_show_all(popup_menu_unset);
 
 	/* Add registers and flags */
 	i=0;

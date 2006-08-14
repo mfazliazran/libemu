@@ -29,6 +29,7 @@ void emu_mem_init(unsigned long sz);
 void emu_mem_init_k(unsigned int sz);
 void emu_mem_set_direct(unsigned long int pos, unsigned char data);
 void emu_mem_set(unsigned long int pos, unsigned char data);
+unsigned long int emu_mem_size();
 unsigned char emu_mem_get(unsigned long int pos);
 
 /* libemu ROM API */
