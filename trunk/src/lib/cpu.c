@@ -11,8 +11,8 @@ typedef struct
 /* Variables */
 static gboolean cpu_loaded = FALSE;
 static gboolean running = FALSE;
-static GtkWidget *cpu_window, *cpu_debugger, *cpu_reference, *cpu_step, 
-		 *cpu_vblank;
+static GtkWidget* cpu_window;
+static GtkWidget *cpu_debugger, *cpu_reference, *cpu_step, *cpu_vblank;
 static GtkWidget *run_image, *run_label;
 GtkWidget *popup_menu, *popup_menu_unset;
 static int num_registers, num_flags;
@@ -85,7 +85,11 @@ static void update_debugger(gboolean find_ip)
 
 	if(!cpu_loaded) return;
 
-	gtk_tree_model_get_iter_first(GTK_TREE_MODEL(store), &iter);
+	if(!gtk_tree_model_get_iter_first(GTK_TREE_MODEL(store), &iter))
+	{
+		emu_cpu_set_debugger_reference(ip);
+		return;
+	}
 	do
 	{
 		long pos;
@@ -144,6 +148,11 @@ gboolean run()
  * EVENT HANDLERS
  */
 
+static void cpu_show(GtkWidget* widget, gpointer data)
+{
+	gtk_window_present(GTK_WINDOW(cpu_window));
+}
+
 /* Handle when the debugger is right clicked */
 static gboolean cpu_debugger_clicked(GtkWidget *widget, GdkEvent *event)
 {
@@ -153,7 +162,6 @@ static gboolean cpu_debugger_clicked(GtkWidget *widget, GdkEvent *event)
 	GtkTreeModel *model;
 	gulong pos;
 
-	menu = GTK_MENU(widget);
 	event_button = (GdkEventButton*)event;
 	if(event_button->button != 3)
 		return FALSE;
@@ -285,13 +293,11 @@ void emu_cpu_set_debugger_reference(unsigned long initial_pos)
 
 	if(!cpu_loaded) return;
 
-	/* TODO - check if higher than memory */
-
 	previous_reference = gtk_entry_get_text(GTK_ENTRY(cpu_reference));
 	
 	gtk_list_store_clear(store);
 	gtk_tree_view_set_model(GTK_TREE_VIEW(cpu_debugger), NULL);
-	while(i<255)
+	while(i<255 && pos < emu_mem_size())
 	{
 		gchar* inst;
 		gchar* data;
@@ -494,13 +500,15 @@ int emu_cpu_init(char* filename)
 	g_message("CPU %s loaded from %s", emu_cpu_name, path);
 	
 	/* Add a new menu option */
-	debug_item = gtk_menu_item_new_with_label(emu_cpu_name);
+	debug_item = gtk_menu_item_new_with_label(g_strdup_printf("%s (cpu)", emu_cpu_name));
 	gtk_menu_shell_append(GTK_MENU_SHELL(debug_menu), debug_item);
+	g_signal_connect_swapped(debug_item, "activate", G_CALLBACK(cpu_show), NULL);
 
 	/* Create a new window, hidden */
 	cpu_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title(GTK_WINDOW(cpu_window), emu_cpu_name);
 	gtk_window_set_destroy_with_parent(GTK_WINDOW(cpu_window), TRUE);
+	gtk_window_set_default_size(GTK_WINDOW(cpu_window), 280, 435);
 
 	/* Window */
 	vbox1 = gtk_vbox_new(FALSE, 0);
@@ -668,7 +676,7 @@ int emu_cpu_init(char* filename)
 	ip = previous_ip = 0;
 	update_debugger(TRUE);
 
-	gtk_window_present(GTK_WINDOW(cpu_window));
+	// gtk_window_present(GTK_WINDOW(cpu_window));
 
 	cpu_loaded = TRUE;
 
