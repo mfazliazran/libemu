@@ -59,7 +59,7 @@ int cycles;
 EXPORT char dev_type[] = "cpu";
 
 /* Fill in the name of the CPU */
-EXPORT char dev_cpu_name[] = "6502";
+EXPORT char dev_cpu_name[] = "MOS 6502";
 
 /* Program Counter (also known as Instruction Pointer):
  * the memory address that contains the opcode currently being executed. */

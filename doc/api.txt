@@ -31,6 +31,7 @@ libemu API
 +---+-------------------------------+-------------------------------+
 |   | emu_mem_init                  |                               |
 |   | emu_mem_init_k                |                               |
+|   | emu_mem_size                  | dev_mem_size                  |
 |   | emu_mem_get                   | dev_mem_get                   |
 |   | emu_mem_set                   | dev_mem_set                   |
 |   | emu_mem_set_direct            | dev_mem_set_direct            |
