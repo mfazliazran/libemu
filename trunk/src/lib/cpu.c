@@ -10,7 +10,6 @@ typedef struct
 
 /* Variables */
 static gboolean cpu_loaded = FALSE;
-static gboolean running = FALSE;
 static GtkWidget* cpu_window;
 static GtkWidget *cpu_debugger, *cpu_reference, *cpu_step, *cpu_vblank;
 static GtkWidget *run_image, *run_label;
@@ -110,6 +109,8 @@ static void update_debugger(gboolean find_ip)
 
 	if(!found && find_ip)
 		emu_cpu_set_debugger_reference(ip);
+
+	/* TODO - scroll to */
 }
 
 /* Thread that runs the emulator */
@@ -300,7 +301,7 @@ static void cpu_run_pause_clicked(GtkButton* cpu_run_pause, gpointer data)
  */
 
 /* Return the reference number */
-long emu_cpu_get_debugger_reference()
+unsigned long emu_cpu_get_debugger_reference()
 {
 	gchar* hex;
 	if(!cpu_loaded) return -1;
