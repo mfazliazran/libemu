@@ -170,7 +170,7 @@ static void cpu_show_hide(GtkCheckMenuItem *item, gpointer data)
 }
 
 /* When the close button is clicked on the debugger */
-static void cpu_hide(GtkWidget *widget, GdkEvent *event, gpointer data)
+static gboolean cpu_hide(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
 	gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(data), FALSE);
 	gtk_widget_hide(cpu_window);
