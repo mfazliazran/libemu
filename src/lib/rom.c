@@ -25,6 +25,7 @@ int emu_rom_load(char* filename, long pos)
 		emu_cpu_set_debugger_reference(pos);
 	else
 		emu_cpu_set_debugger_reference(emu_cpu_get_debugger_reference());
+	emu_mem_set_reference(0);
 	
 	return -1;
 }

@@ -4,8 +4,10 @@
 unsigned char* ram = NULL;
 unsigned long int size = 0;
 glong first, last;
-static GtkWidget *ram_window, *ram_debugger;
+static GtkWidget *mem_window, *mem_reference, *mem_debugger;
 static GtkListStore *store;
+static gchar* previous_reference;
+glong last_mem, previous_mem;
 
 enum
 {
@@ -31,46 +33,102 @@ enum
  */
 
 /* When the RAM menu item is clicked on the main window */
-static void ram_show_hide(GtkCheckMenuItem *item, gpointer data)
+static void mem_show_hide(GtkCheckMenuItem *item, gpointer data)
 {
 	if(item->active)
-		gtk_window_present(GTK_WINDOW(ram_window));
+		gtk_window_present(GTK_WINDOW(mem_window));
 	else
-		gtk_widget_hide(ram_window);
+		gtk_widget_hide(mem_window);
 }
 
 /* When the close button is clicked on the memory window */
-static gboolean ram_hide(GtkWidget *widget, GdkEvent *event, gpointer data)
+static gboolean mem_hide(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
 	gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(data), FALSE);
-	gtk_widget_hide(ram_window);
+	gtk_widget_hide(mem_window);
 	return TRUE;
 }
 
 /* When a new reference is set */
-static void ram_reference_changed(GtkEntry* entry, gpointer data)
+static void mem_reference_changed(GtkEntry* entry, gpointer data)
 {
-	/*
-	if(emu_cpu_get_debugger_reference() < 0)
+	if(emu_mem_get_reference() < 0)
 	{
-		gtk_entry_set_text(GTK_ENTRY(cpu_reference), previous_reference);
+		gtk_entry_set_text(GTK_ENTRY(mem_reference), previous_reference);
 		return;
 	}
 
-	emu_cpu_set_debugger_reference(emu_cpu_get_debugger_reference());
-	*/
+	emu_mem_set_reference(emu_mem_get_reference());
 }
 
 /*
  * API CALLS
  */
 
+unsigned long emu_mem_get_reference()
+{
+	gchar* hex;
+	if(size == 0) 
+		return -1;
+	hex = gtk_entry_get_text(GTK_ENTRY(mem_reference));
+	return hex2long(hex);	
+}
+
+void emu_mem_set_reference(unsigned long initial_pos)
+{
+	GtkTreeIter iter;
+	int i=0, j, cycles, bytes;
+	unsigned long pos;
+
+	initial_pos &= 0xFFFFFFF0;
+	pos = first = initial_pos;
+
+	if(size == 0) 
+		return;
+
+	previous_reference = gtk_entry_get_text(GTK_ENTRY(mem_reference));
+	
+	gtk_list_store_clear(store);
+	gtk_tree_view_set_model(GTK_TREE_VIEW(mem_debugger), NULL);
+	while(i<16 && pos < size)
+	{
+		gchar *data[16];
+		for(j=0; j<16; j++)
+			if(pos+j < size)
+				data[j] = g_strdup_printf("%02X", emu_mem_get(pos+j));
+			else
+				data[j] = NULL;
+
+		gtk_list_store_append(store, &iter);
+		gtk_list_store_set(store, &iter,
+				ADDRESS, g_strdup_printf("%03X_", pos / 0x10),
+				BYTE_0, data[0], BYTE_1, data[1],
+				BYTE_2, data[2], BYTE_3, data[3],
+				BYTE_4, data[4], BYTE_5, data[5],
+				BYTE_6, data[5], BYTE_7, data[7],
+				BYTE_8, data[6], BYTE_9, data[9],
+				BYTE_A, data[10], BYTE_B, data[11],
+				BYTE_C, data[12], BYTE_D, data[13],
+				BYTE_E, data[14], BYTE_F, data[15],
+				LONG_ADDRESS, pos,
+				-1);
+		for(j=0; j<16; j++)
+			g_free(data[j]);
+		pos += 16;
+		i++;
+	}
+	gtk_tree_view_set_model(GTK_TREE_VIEW(mem_debugger), GTK_TREE_MODEL(store));
+
+	gtk_entry_set_text(GTK_ENTRY(mem_reference), g_strdup_printf("%04X", initial_pos));
+
+	last = MIN(pos, size);
+}
+
 /* Create the memory */
 void emu_mem_init(unsigned long sz)
 {
 	GtkWidget *debug_item;
-	GtkWidget *vbox, *hbox2, *reference_label, *ram_reference,
-		  *scroll_debugger;
+	GtkWidget *vbox, *hbox2, *reference_label, *scroll_debugger;
 	GtkTreeViewColumn *column;
 	GtkCellRenderer *renderer;
 	gint i;
@@ -92,13 +150,14 @@ void emu_mem_init(unsigned long sz)
 	/* Add a new menu option */
 	debug_item = gtk_check_menu_item_new_with_label(g_strdup_printf("RAM - %dk", size / 1024));
 	gtk_menu_shell_append(GTK_MENU_SHELL(debug_menu), debug_item);
-	g_signal_connect(debug_item, "toggled", G_CALLBACK(ram_show_hide), NULL);
+	g_signal_connect(debug_item, "toggled", G_CALLBACK(mem_show_hide), NULL);
 
 	/* Create a new window, hidden */
-	ram_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	gtk_window_set_title(GTK_WINDOW(ram_window), g_strdup_printf("RAM - %dk", size / 1024));
-	gtk_window_set_destroy_with_parent(GTK_WINDOW(ram_window), TRUE);
-	g_signal_connect(ram_window, "delete_event", G_CALLBACK(ram_hide), debug_item);
+	mem_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	gtk_window_set_title(GTK_WINDOW(mem_window), g_strdup_printf("RAM - %dk", size / 1024));
+	gtk_window_set_default_size(GTK_WINDOW(mem_window), 440, 275);
+	gtk_window_set_destroy_with_parent(GTK_WINDOW(mem_window), TRUE);
+	g_signal_connect(mem_window, "delete_event", G_CALLBACK(mem_hide), debug_item);
 
 	vbox = gtk_vbox_new(FALSE, 6);
 
@@ -106,11 +165,11 @@ void emu_mem_init(unsigned long sz)
 	hbox2 = gtk_hbox_new(FALSE, 6);
 	reference_label = gtk_label_new("Reference");
 	gtk_box_pack_start(GTK_BOX(hbox2), reference_label, FALSE, FALSE, 6);
-	ram_reference = gtk_entry_new();
-	gtk_entry_set_width_chars(GTK_ENTRY(ram_reference), 8);
-	gtk_box_pack_start(GTK_BOX(hbox2), ram_reference, FALSE, FALSE, 0);
-	g_signal_connect_swapped(ram_reference, "activate",
-			G_CALLBACK(ram_reference_changed), NULL);
+	mem_reference = gtk_entry_new();
+	gtk_entry_set_width_chars(GTK_ENTRY(mem_reference), 8);
+	gtk_box_pack_start(GTK_BOX(hbox2), mem_reference, FALSE, FALSE, 0);
+	g_signal_connect_swapped(mem_reference, "activate",
+			G_CALLBACK(mem_reference_changed), NULL);
 	gtk_box_pack_start(GTK_BOX(vbox), hbox2, FALSE, FALSE, 0);
 
 	/* Memory table */
@@ -124,36 +183,37 @@ void emu_mem_init(unsigned long sz)
 			G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
 			G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
 			G_TYPE_LONG);
-	ram_debugger = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
-	gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(ram_debugger), TRUE);
+	mem_debugger = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
+	gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(mem_debugger), TRUE);
 	
 	column = gtk_tree_view_column_new();
 	gtk_tree_view_column_set_title(column, "Address");
-	gtk_tree_view_append_column(GTK_TREE_VIEW(ram_debugger), column);
+	gtk_tree_view_append_column(GTK_TREE_VIEW(mem_debugger), column);
 	renderer = gtk_cell_renderer_text_new();
 	gtk_tree_view_column_pack_start(column, renderer, TRUE);
+	gtk_tree_view_column_add_attribute(column, renderer, "text", ADDRESS);
 	
 	for(i=1; i<17; i++)
 	{
 		column = gtk_tree_view_column_new();
-		gtk_tree_view_column_set_title(column, g_strdup_printf("...%1X", i-1));
-		gtk_tree_view_append_column(GTK_TREE_VIEW(ram_debugger), column);
+		gtk_tree_view_column_set_title(column, g_strdup_printf("__%1X", i-1));
+		gtk_tree_view_append_column(GTK_TREE_VIEW(mem_debugger), column);
 		renderer = gtk_cell_renderer_text_new();
 		gtk_tree_view_column_pack_start(column, renderer, TRUE);
 		gtk_tree_view_column_add_attribute(column, renderer, "text", i);
 		gtk_tree_view_column_add_attribute(column, renderer, "cell-background", i+16);
 	}
-	//g_signal_connect_swapped(ram_debugger, "button_press_event",
-	//		G_CALLBACK(ram_debugger_clicked), NULL);
 
 	scroll_debugger = gtk_scrolled_window_new(NULL, NULL);
-	gtk_container_add(GTK_CONTAINER(scroll_debugger), ram_debugger);
+	gtk_container_add(GTK_CONTAINER(scroll_debugger), mem_debugger);
 	gtk_box_pack_start(GTK_BOX(vbox), scroll_debugger, TRUE, TRUE, 0);
 
-	gtk_container_set_border_width(GTK_CONTAINER(ram_window), 6);
-	gtk_container_add(GTK_CONTAINER(ram_window), vbox);
-	gtk_widget_show_all(ram_window);
-	gtk_window_present(GTK_WINDOW(ram_window));
+	emu_mem_set_reference(0);
+
+	gtk_container_set_border_width(GTK_CONTAINER(mem_window), 6);
+	gtk_container_add(GTK_CONTAINER(mem_window), vbox);
+	gtk_widget_show_all(mem_window);
+	gtk_window_present(GTK_WINDOW(mem_window));
 }
 
 /* Create the memory, using kilobytes as argument */
@@ -165,10 +225,38 @@ void emu_mem_init_k(unsigned int sz)
 /* Sets the memory directly, without passing data to the components */
 void emu_mem_set_direct(unsigned long int pos, unsigned char data)
 {
+	GtkTreeIter iter;
+	gboolean found = FALSE;
+
 	if(pos > (size-1) || pos < 0)
+	{
 		g_critical("Trying to write outside memory bounds, in position 0x%x!", pos);
-	else
-		ram[pos] = data;
+		return;
+	}
+	
+	ram[pos] = data;
+	previous_mem = last_mem;
+	last_mem = pos;
+
+	/* TODO - scroll to */
+
+	if(running || !GTK_WIDGET_VISIBLE(mem_window))
+		return;
+
+	if(!gtk_tree_model_get_iter_first(GTK_TREE_MODEL(store), &iter))
+		return;
+	do
+	{
+		long pos;
+		gtk_tree_model_get(GTK_TREE_MODEL(store), &iter, LONG_ADDRESS, &pos, -1);
+		if(previous_mem >= pos && previous_mem < pos+16)
+			gtk_list_store_set(store, &iter, previous_mem - pos + 17, NULL, -1);
+		if(last_mem >= pos && last_mem < pos+16)
+			gtk_list_store_set(store, &iter, 
+					last_mem - pos, g_strdup_printf("%02X", data),
+					last_mem - pos + 17, "Yellow", 
+					-1);
+	} while(gtk_tree_model_iter_next(GTK_TREE_MODEL(store), &iter));
 }
 
 /* Sets a byte into the memory */

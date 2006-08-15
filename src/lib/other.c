@@ -47,7 +47,7 @@ GtkWidget* button_with_stock_image(gchar* mnemonic, gchar* stock)
 	return button;
 }
 
-long hex2long(char* hex)
+unsigned long hex2long(char* hex)
 {
 	int size = strlen(hex);
 	int i, factor = 1;

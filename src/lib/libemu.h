@@ -13,7 +13,7 @@ void emu_error(char* message);
 int emu_cpu_init(char* filename);
 void emu_cpu_set_breakpoint(unsigned long int pos, int one_time_only);
 void emu_cpu_unset_breakpoint(unsigned long int pos);
-long emu_cpu_get_debugger_reference();
+unsigned long emu_cpu_get_debugger_reference();
 void emu_cpu_set_debugger_reference(unsigned long initial_pos);
 char* emu_cpu_name;
 char* (*emu_cpu_register_name)(int n);
@@ -32,6 +32,8 @@ void emu_mem_init_k(unsigned int sz);
 void emu_mem_set_direct(unsigned long int pos, unsigned char data);
 void emu_mem_set(unsigned long int pos, unsigned char data);
 unsigned char emu_mem_get(unsigned long int pos);
+unsigned long emu_mem_get_reference();
+void emu_mem_set_reference(unsigned long initial_pos);
 
 /* libemu ROM API */
 int emu_rom_load(char* filename, long pos);

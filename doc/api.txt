@@ -4,7 +4,7 @@ libemu API
 +---+-------------------------------+-------------------------------+
 | * |    Callable from main app     |     Callable from devices     |
 +---+-------------------------------+-------------------------------+
-| GENERAL                                                          |
+| GENERAL                                                           |
 +---+-------------------------------+-------------------------------+
 |   | emu_init                      |                               |
 |   | emu_main                      |                               |
@@ -31,8 +31,8 @@ libemu API
 +---+-------------------------------+-------------------------------+
 |   | emu_mem_init                  |                               |
 |   | emu_mem_init_k                |                               |
-|   | emu_mem_get_debugger_reference|                               |
-|   | emu_mem_set_debugger_reference|                               |
+|   | emu_mem_get_reference         |                               |
+|   | emu_mem_set_reference         |                               |
 |   | emu_mem_size                  | dev_mem_size                  |
 |   | emu_mem_get                   | dev_mem_get                   |
 |   | emu_mem_set                   | dev_mem_set                   |
