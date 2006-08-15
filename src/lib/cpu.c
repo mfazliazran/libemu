@@ -117,7 +117,19 @@ gboolean run()
 {
 	BKP *bkp;
 	int num_cycles;
+	GtkTreeIter iter;
 
+	/* clear IP from debugger */
+	gtk_tree_model_get_iter_first(GTK_TREE_MODEL(store), &iter);
+	do
+	{
+		long pos;
+		gtk_tree_model_get(GTK_TREE_MODEL(store), &iter, LONG_ADDRESS, &pos, -1);
+		if(!is_breakpoint(pos, FALSE))
+			gtk_list_store_set(store, &iter, BG_COLOR, NULL, -1);
+	} while(gtk_tree_model_iter_next(GTK_TREE_MODEL(store), &iter));
+
+	/* run! */
 	previous_ip = ip;
 	while(running)
 	{
@@ -148,9 +160,21 @@ gboolean run()
  * EVENT HANDLERS
  */
 
-static void cpu_show(GtkWidget* widget, gpointer data)
+/* When the CPU menu item is clicked on the main window */
+static void cpu_show_hide(GtkCheckMenuItem *item, gpointer data)
 {
-	gtk_window_present(GTK_WINDOW(cpu_window));
+	if(item->active)
+		gtk_window_present(GTK_WINDOW(cpu_window));
+	else
+		gtk_widget_hide(cpu_window);
+}
+
+/* When the close button is clicked on the debugger */
+static void cpu_hide(GtkWidget *widget, GdkEvent *event, gpointer data)
+{
+	gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(data), FALSE);
+	gtk_widget_hide(cpu_window);
+	return TRUE;
 }
 
 /* Handle when the debugger is right clicked */
@@ -500,16 +524,17 @@ int emu_cpu_init(char* filename)
 	g_message("CPU %s loaded from %s", emu_cpu_name, path);
 	
 	/* Add a new menu option */
-	debug_item = gtk_menu_item_new_with_label(g_strdup_printf("%s (cpu)", emu_cpu_name));
+	debug_item = gtk_check_menu_item_new_with_label(g_strdup_printf("%s (cpu)", emu_cpu_name));
 	gtk_menu_shell_append(GTK_MENU_SHELL(debug_menu), debug_item);
-	g_signal_connect_swapped(debug_item, "activate", G_CALLBACK(cpu_show), NULL);
+	g_signal_connect(debug_item, "toggled", G_CALLBACK(cpu_show_hide), NULL);
 
 	/* Create a new window, hidden */
 	cpu_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title(GTK_WINDOW(cpu_window), emu_cpu_name);
 	gtk_window_set_destroy_with_parent(GTK_WINDOW(cpu_window), TRUE);
 	gtk_window_set_default_size(GTK_WINDOW(cpu_window), 280, 435);
-
+	g_signal_connect(cpu_window, "delete_event", G_CALLBACK(cpu_hide), debug_item);
+	
 	/* Window */
 	vbox1 = gtk_vbox_new(FALSE, 0);
 	handlebox = gtk_handle_box_new();
