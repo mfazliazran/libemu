@@ -100,7 +100,12 @@ static void update_debugger(gboolean find_ip)
 				gtk_list_store_set(store, &iter, BG_COLOR, NULL, -1);
 		if(pos == ip)
 		{
+			GtkTreePath *path;
 			gtk_list_store_set(store, &iter, BG_COLOR, "Yellow", -1);
+			path = gtk_tree_model_get_path(GTK_TREE_MODEL(store), &iter);
+			gtk_tree_view_scroll_to_cell(GTK_TREE_VIEW(cpu_debugger),
+					path, NULL, FALSE, 0.5, 0);
+			gtk_tree_path_free(path);
 			found = TRUE;
 		}
 	} while(gtk_tree_model_iter_next(GTK_TREE_MODEL(store), &iter));
@@ -154,6 +159,7 @@ gboolean run()
 		gtk_main_iteration_do(FALSE);
 	}
 	update_debugger(TRUE);
+	emu_mem_set_reference(emu_mem_get_reference());
 	return FALSE;
 }
 
@@ -165,7 +171,10 @@ gboolean run()
 static void cpu_show_hide(GtkCheckMenuItem *item, gpointer data)
 {
 	if(item->active)
+	{
 		gtk_window_present(GTK_WINDOW(cpu_window));
+		emu_cpu_set_debugger_reference(emu_cpu_get_debugger_reference());
+	}
 	else
 		gtk_widget_hide(cpu_window);
 }
@@ -270,6 +279,7 @@ static void cpu_step_clicked(GtkButton* cpu_step, gpointer data)
 	previous_ip = ip;
 	ip = emu_cpu_ip();
 	update_debugger(TRUE);
+	emu_mem_set_reference(emu_mem_get_reference());
 }
 
 /* When the button Run/Pause is clicked */
@@ -315,6 +325,7 @@ void emu_cpu_set_debugger_reference(unsigned long initial_pos)
 	GtkTreeIter iter;
 	int i=0, j, cycles, bytes;
 	unsigned long pos = initial_pos;
+	ip = emu_cpu_ip();
 
 	if(!cpu_loaded) return;
 
