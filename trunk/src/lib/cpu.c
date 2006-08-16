@@ -476,6 +476,7 @@ int emu_cpu_init(char* filename)
 	GtkTreeViewColumn *column;
 	GtkCellRenderer *renderer;
 	GtkWidget *bp_item, *bp_once_item, *bp_item_unset;
+	GtkTooltips* tips;
 
 	if(cpu_loaded)
 	{
@@ -546,6 +547,8 @@ int emu_cpu_init(char* filename)
 	gtk_window_set_destroy_with_parent(GTK_WINDOW(cpu_window), TRUE);
 	gtk_window_set_default_size(GTK_WINDOW(cpu_window), 280, 435);
 	g_signal_connect(cpu_window, "delete_event", G_CALLBACK(cpu_hide), debug_item);
+
+	tips = gtk_tooltips_new();
 	
 	/* Window */
 	vbox1 = gtk_vbox_new(FALSE, 0);
@@ -577,15 +580,18 @@ int emu_cpu_init(char* filename)
 		run_label = gtk_label_new_with_mnemonic("_Run");
 		gtk_box_pack_start(GTK_BOX(hbox), run_label, FALSE, FALSE, 0);
 	}
+	gtk_tooltips_set_tip(tips, cpu_run_pause, "Run the microprocessor until it reaches a breakpoint", "");
 
 	g_signal_connect_swapped(cpu_run_pause, "clicked",
 			G_CALLBACK(cpu_run_pause_clicked), NULL);
 	gtk_container_add(GTK_CONTAINER(toolitem[0]), cpu_run_pause);
 	cpu_step = button_with_stock_image("_Step", GTK_STOCK_MEDIA_NEXT);
+	gtk_tooltips_set_tip(tips, cpu_step, "Execute one instruction", "");
 	g_signal_connect_swapped(cpu_step, "clicked",
 			G_CALLBACK(cpu_step_clicked), NULL);
 	gtk_container_add(GTK_CONTAINER(toolitem[1]), cpu_step);
 	cpu_vblank = button_with_stock_image("Go to Next _Frame", GTK_STOCK_JUSTIFY_FILL);
+	gtk_tooltips_set_tip(tips, cpu_vblank, "Run the microprocessor until it reaches a VBLANK", "");
 	gtk_container_add(GTK_CONTAINER(toolitem[2]), cpu_vblank);
 
 	gtk_container_add(GTK_CONTAINER(handlebox), toolbar);
@@ -628,6 +634,7 @@ int emu_cpu_init(char* filename)
 	//gtk_misc_set_padding(GTK_MISC(reference_label), 6, 6);
 	gtk_box_pack_start(GTK_BOX(hbox2), reference_label, FALSE, FALSE, 6);
 	cpu_reference = gtk_entry_new();
+	gtk_tooltips_set_tip(tips, cpu_reference, "Update the debugging window, so that the first instruction is the one that is typed in this entry.", "");
 	gtk_entry_set_width_chars(GTK_ENTRY(cpu_reference), 8);
 	gtk_box_pack_start(GTK_BOX(hbox2), cpu_reference, FALSE, FALSE, 0);
 	g_signal_connect_swapped(cpu_reference, "activate",
