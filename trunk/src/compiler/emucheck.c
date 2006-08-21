@@ -81,6 +81,17 @@ int main(int argc, char** argv)
 		if(!g_module_symbol(mod, "dev_cpu_ip", &sym))
 			gm_warning("function dev_cpu_ip is not implemented");
 	}
+	else if(!strcmp(type, "generic"))
+	{
+		if(!g_module_symbol(mod, "dev_generic_init", &sym))
+			gm_error("variable dev_cpu_name is not defined");
+		if(!g_module_symbol(mod, "dev_generic_memory_set", &sym))
+			gm_error("variable dev_generic_memory_set is not defined");
+		if(!g_module_symbol(mod, "dev_generic_debug_name", &sym))
+			gm_error("variable dev_generic_debug_name is not defined");
+		if(!g_module_symbol(mod, "dev_generic_debug", &sym))
+			gm_error("variable dev_generic_debug is not defined");
+	}
 	else
-		error("the device type (type) is not one of: cpu, video or device");
+		error("the device type (type) is not one of: cpu, video or generic");
 }

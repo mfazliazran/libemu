@@ -86,7 +86,7 @@ RC = @RC@
 STRIP = @STRIP@
 VERSION = @VERSION@
 
-pkgdata_DATA = cpu.c video.c device.c
+pkgdata_DATA = cpu.c video.c generic.c
 EXTRA_DIST = ${pkgdata_DATA}
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = ../../../config.h
