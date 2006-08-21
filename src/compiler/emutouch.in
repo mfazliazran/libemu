@@ -7,11 +7,11 @@ TEMPLATE_PATH=@datadir@/@PACKAGE@
 function print_usage
 {
 	echo $"Usage: emutouch OPTION... [NEW_FILE]
-      --help              print this help and exit
-      --version           print version information and exit
-      -tc, --touch-cpu    creates a new CPU emulator source file
-      -tv, --touch-video  creates a new video emulator source file
-      -td, --touch-dev    creates a new device emulator source file"
+      --help                print this help and exit
+      --version             print version information and exit
+      -tc, --touch-cpu      creates a new CPU emulator source file
+      -tv, --touch-video    creates a new video emulator source file
+      -tg, --touch-generic  creates a new generic device emulator source file"
 }
 
 function touch_cpu_c
@@ -41,11 +41,11 @@ function touch_video_c
 function touch_dev_c
 {
 	if [ $# -eq 0 ]; then
-		cat "$TEMPLATE_PATH/device.c" > device.c
+		cat "$TEMPLATE_PATH/generic.c" > generic.c
 		return
 	else
 		for file in $@; do
-			cat "$TEMPLATE_PATH/device.c" > $file
+			cat "$TEMPLATE_PATH/generic.c" > $file
 		done
 	fi
 }
@@ -81,7 +81,7 @@ while [ $# -gt 0 ]; do
 		exit 0
 		;;
 	  
-	-td | --touch-device)
+	-tg | --touch-generic)
 		shift
 		touch_dev_c $@
 		exit 0

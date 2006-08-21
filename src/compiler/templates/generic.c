@@ -2,18 +2,22 @@
  * Describe your device here.
  * 
  */
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "extern.c"
+#include "libdev.h"
+
+EXPORT char dev_type[] = "generic";
+
+/* Fill in the name of the device */
+EXPORT char dev_generic_name[] = "";
 
 char tmp[1000];
 
 /* You must implement this function.
  *
  * This function initializes the device. */
-EXPORT void init_device()
+EXPORT void dev_generic_init()
 {
 
 }
@@ -26,16 +30,9 @@ EXPORT void init_device()
  * Return value: 
  *   if  0 is returned, the memory will be updated; 
  *   if -1 is returned, the memory will not be updated. */
-EXPORT int device_memory_set(long pos, unsigned char data)
+EXPORT int dev_generic_memory_set(long pos, unsigned char data)
 {
 	return 0;
-}
-
-/* TODO */
-/* Walk [cycles] steps on video. Each CPU cycle = 3 video cycles */
-EXPORT void device_step(int cycles)
-{
-
 }
 
 /* The following functions (inside the DEBUG directive) are used only by the
@@ -52,7 +49,7 @@ char info[100];
  * has two registers, X and Y, when n == 0, the function would return "X", and
  * when n == 1, it would return "Y". The funcion must return NULL for every 
  * other value of n. */
-EXPORT char* device_debug_name(int n)
+EXPORT char* dev_generic_debug_name(int n)
 {
 	switch(n)
 	{
@@ -70,7 +67,7 @@ EXPORT char* device_debug_name(int n)
  * has two registers, X and Y, when n == 0, the function would return the value 
  * in X, and when n == 1, it would return the value in Y. The value of the 
  * register n must match the register n passed on the function register_name. */
-EXPORT char* device_debug(int n)
+EXPORT char* dev_generic_debug(int n)
 {
 	switch(n)
 	{
