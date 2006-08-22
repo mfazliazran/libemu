@@ -1,6 +1,8 @@
 #ifndef _LIBEMU_H_
 #define _LIBEMU_H_
 
+#define MAX_GENERIC 255
+
 /* libemu API */
 
 /* General functions */
@@ -24,6 +26,14 @@ char* (*emu_cpu_debug)(unsigned long addr, int* num_cycles, int* bytes);
 void (*emu_cpu_reset)();
 unsigned long int (*emu_cpu_ip)();
 int (*emu_cpu_step)(int* cycles);
+
+/* Generic device functions */
+int emu_generic_init(char* filename);
+char* emu_generic_name[MAX_GENERIC];
+void (*emu_generic_reset[MAX_GENERIC])();
+int (*emu_generic_memory_set[MAX_GENERIC])(unsigned long int pos, unsigned char data);
+char* (*emu_generic_debug_name[MAX_GENERIC])(int n);
+char* (*emu_generic_debug[MAX_GENERIC])(int n);
 
 /* libemu RAM API */
 unsigned long int emu_mem_size();
