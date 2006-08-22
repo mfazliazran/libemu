@@ -7,6 +7,12 @@
 #include <stdlib.h>
 #include "libdev.h"
 
+#define INPT0  0x38
+#define INPT1  0x39
+#define INPT2  0x3A
+#define INPT3  0x3B
+#define INPT4  0x3C
+#define INPT5  0x3D
 #define SWCHA  0x280
 #define SWACNT 0x281
 #define SWCHB  0x282
@@ -17,6 +23,7 @@
 #define TIM8T  0x295
 #define TIM64T 0x296
 #define T1024T 0x297
+int timer = 0;
 
 EXPORT char dev_type[] = "generic";
 
@@ -28,7 +35,7 @@ char tmp[1000];
 /* You must implement this function.
  *
  * This function initializes the device. */
-EXPORT void dev_generic_init()
+EXPORT void dev_generic_reset()
 {
 
 }
@@ -64,10 +71,23 @@ EXPORT char* dev_generic_debug_name(int n)
 {
 	switch(n)
 	{
-		/*
-		case 0:	return "X";
-		case 1: return "Y";
-		*/
+		case 0:	 return "INPT0";
+		case 1:	 return "INPT1";
+		case 2:	 return "INPT2";
+		case 3:	 return "INPT3";
+		case 4:	 return "INPT4";
+		case 5:	 return "INPT5";
+		case 6:	 return "SWCHA";
+		case 7:	 return "SWCHB";
+		case 8:	 return "SWACNT";
+		case 9:	 return "SWBCNT";
+		case 10: return "INTIM";
+		case 11: return "INSTAT";
+		case 12: return "TIM1T";
+		case 13: return "TIM8T";
+		case 14: return "TIM64T";
+		case 15: return "T1024T";
+		case 16: return "Timer";
 		default: return NULL;
 	}
 }
@@ -82,16 +102,24 @@ EXPORT char* dev_generic_debug(int n)
 {
 	switch(n)
 	{
-		/*
-		case 0:
-			sprintf(info, "%d", X);
-			break;
-		case 1:
-			sprintf(info, "%d", Y);
-			break;
-		*/
-		default:
-			return NULL;
+		case 0:  sprintf(info, "%d", INPT0);  break;
+		case 1:  sprintf(info, "%d", INPT1);  break;
+		case 2:  sprintf(info, "%d", INPT2);  break;
+		case 3:  sprintf(info, "%d", INPT3);  break;
+		case 4:  sprintf(info, "%d", INPT4);  break;
+		case 5:  sprintf(info, "%d", INPT5);  break;
+		case 6:  sprintf(info, "%d", SWCHA);  break;
+		case 7:  sprintf(info, "%d", SWCHB);  break;
+		case 8:  sprintf(info, "%d", SWACNT); break;
+		case 9:  sprintf(info, "%d", SWBCNT); break;
+		case 10: sprintf(info, "%d", INTIM);  break;
+		case 11: sprintf(info, "%d", INSTAT); break;
+		case 12: sprintf(info, "%d", TIM1T);  break;
+		case 13: sprintf(info, "%d", TIM8T);  break;
+		case 14: sprintf(info, "%d", TIM64T); break;
+		case 15: sprintf(info, "%d", T1024T); break;
+		case 16: sprintf(info, "%d", timer);  break;
+		default: return NULL;
 	}
 	return info;
 }

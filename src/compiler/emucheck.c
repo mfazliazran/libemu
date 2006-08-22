@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-typedef enum { CPU, VIDEO, DEVICE } DEV_TYPE;
+typedef enum { CPU, VIDEO, GENERIC } DEV_TYPE;
 
 void error(const char* str)
 {
@@ -83,8 +83,8 @@ int main(int argc, char** argv)
 	}
 	else if(!strcmp(type, "generic"))
 	{
-		if(!g_module_symbol(mod, "dev_generic_init", &sym))
-			gm_error("variable dev_cpu_name is not defined");
+		if(!g_module_symbol(mod, "dev_generic_reset", &sym))
+			gm_error("variable dev_generic_reset is not defined");
 		if(!g_module_symbol(mod, "dev_generic_memory_set", &sym))
 			gm_error("variable dev_generic_memory_set is not defined");
 		if(!g_module_symbol(mod, "dev_generic_debug_name", &sym))

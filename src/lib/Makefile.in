@@ -88,7 +88,7 @@ VERSION = @VERSION@
 
 lib_LTLIBRARIES = libemu.la
 
-libemu_la_SOURCES = libemu.c cpu.c ram.c rom.c other.c other.h
+libemu_la_SOURCES = libemu.c cpu.c ram.c rom.c generic.c other.c other.h
 libemu_la_LIBADD = $(DEPS_LIBS)
 
 libemu_la_LDFLAGS = -version-info 0:0:0

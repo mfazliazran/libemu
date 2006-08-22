@@ -14,6 +14,6 @@ GtkWidget* screen;
 GtkWidget* statusbar;
 static gboolean running = FALSE;
 
-int has_cpu, has_video, has_ram, device_count;
+int has_cpu, has_video, has_ram, generic_count;
 
 #endif

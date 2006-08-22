@@ -160,11 +160,15 @@ void emu_mem_init(unsigned long sz)
 	}
 
 	ram = g_malloc(sz);
+	// ram = g_new(char, sz);
+
+	/*
 	if(!ram)
 	{
 		g_error("Not enough free memory when reseving memory for RAM.");
 		return;
 	}
+	*/
 	size = sz;
 
 	/* Add a new menu option */

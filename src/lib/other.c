@@ -5,6 +5,7 @@
 int connect_callbacks(GModule* mod)
 {
 	void (*set_callbacks)(
+		unsigned long (*dev_mem_size_ptr)(),
 		void (*dev_message_ptr)(char*),
 		void (*dev_mem_set_direct_ptr)(unsigned long int, unsigned char),
 		void (*dev_mem_set_ptr)(unsigned long int, unsigned char),
@@ -15,6 +16,7 @@ int connect_callbacks(GModule* mod)
 		return 0;
 
 	set_callbacks(
+			(void*)&emu_mem_size,
 			(void*)&emu_message,
 			(void*)&emu_mem_set_direct,
 			(void*)&emu_mem_set,

@@ -17,7 +17,7 @@ char tmp[1000];
 /* You must implement this function.
  *
  * This function initializes the device. */
-EXPORT void dev_generic_init()
+EXPORT void dev_generic_reset()
 {
 
 }
