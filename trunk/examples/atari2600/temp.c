@@ -10,7 +10,7 @@
 EXPORT char dev_type[] = "generic";
 
 /* Fill in the name of the device */
-EXPORT char dev_generic_name[] = "";
+EXPORT char dev_generic_name[] = "Temporary Device";
 
 char tmp[1000];
 
@@ -28,11 +28,11 @@ EXPORT void dev_generic_reset()
  * position that is inside the device memory area.
  *
  * Return value: 
- *   if  0 is returned, the memory will not be updated; 
- *   if -1 is returned, the memory will be updated. */
+ *   if  0 is returned, the memory will be updated; 
+ *   if -1 is returned, the memory will not be updated. */
 EXPORT int dev_generic_memory_set(long pos, unsigned char data)
 {
-	return -1;
+	return 0;
 }
 
 /* The following functions (inside the DEBUG directive) are used only by the
@@ -53,10 +53,8 @@ EXPORT char* dev_generic_debug_name(int n)
 {
 	switch(n)
 	{
-		/*
 		case 0:	return "X";
 		case 1: return "Y";
-		*/
 		default: return NULL;
 	}
 }
@@ -71,14 +69,12 @@ EXPORT char* dev_generic_debug(int n)
 {
 	switch(n)
 	{
-		/*
 		case 0:
-			sprintf(info, "%d", X);
+			sprintf(info, "%d", 1);
 			break;
 		case 1:
-			sprintf(info, "%d", Y);
+			sprintf(info, "%d", 2);
 			break;
-		*/
 		default:
 			return NULL;
 	}

@@ -3,6 +3,9 @@
 
 #define MAX_GENERIC 255
 
+#define CPU   -1
+#define VIDEO -2
+
 /* libemu API */
 
 /* General functions */
@@ -44,6 +47,7 @@ void emu_mem_set(unsigned long int pos, unsigned char data);
 unsigned char emu_mem_get(unsigned long int pos);
 unsigned long emu_mem_get_reference();
 void emu_mem_set_reference(unsigned long initial_pos);
+int emu_mem_map_add(int device, unsigned long int initial, unsigned long int final);
 
 /* libemu ROM API */
 int emu_rom_load(char* filename, long pos);

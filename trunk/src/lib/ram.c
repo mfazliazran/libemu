@@ -1,6 +1,12 @@
 #include "libemu.h"
 #include "other.h"
 
+typedef struct {
+	int device;
+	unsigned long int initial;
+	unsigned long int final;
+} MEMORY_MAP;
+
 unsigned char* ram = NULL;
 unsigned long int size = 0;
 glong first, last;
@@ -8,6 +14,7 @@ static GtkWidget *mem_window, *mem_reference, *mem_debugger;
 static GtkListStore *store;
 static gchar* previous_reference;
 glong last_mem, previous_mem;
+GSList *memory_map = NULL;
 
 enum
 {
@@ -267,7 +274,32 @@ void emu_mem_set_direct(unsigned long int pos, unsigned char data)
 /* Sets a byte into the memory */
 void emu_mem_set(unsigned long int pos, unsigned char data)
 {
-	emu_mem_set_direct(pos, data);
+	GSList *list;
+	gboolean set_memory = TRUE;
+
+	/* check the memory maps */
+	list = memory_map;
+
+	while(list)
+	{
+		if(((MEMORY_MAP*)(list->data))->initial <= pos && 
+		   ((MEMORY_MAP*)(list->data))->final >= pos)
+		{
+			switch(((MEMORY_MAP*)(list->data))->device)
+			{
+				case VIDEO:
+					break;
+				default:
+					if(!emu_generic_memory_set[((MEMORY_MAP*)(list->data))->device](pos, data))
+						set_memory = FALSE;
+			}
+		}
+		list = list->next;
+	}
+
+	/* set the memory byte */
+	if(set_memory)
+		emu_mem_set_direct(pos, data);
 }
 
 /* Gets a bytes from the memory */
@@ -283,4 +315,19 @@ unsigned char emu_mem_get(unsigned long int pos)
 unsigned long int emu_mem_size()
 {
 	return size;
+}
+
+/* Add a new memory map. Returns -1 on success, 0 on faliure. */
+int emu_mem_map_add(int device, unsigned long int initial, unsigned long int final)
+{
+	MEMORY_MAP *mm;
+
+	if(device > (generic_count - 1) || (device < 0 && device != VIDEO))
+		return 0;
+
+	mm = g_malloc(sizeof(MEMORY_MAP));
+	mm->device = device;
+	mm->initial = initial;
+	mm->final = final;
+	memory_map = g_slist_append(memory_map, mm);
 }

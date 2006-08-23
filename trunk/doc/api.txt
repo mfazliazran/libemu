@@ -37,10 +37,21 @@ libemu API
 |   | emu_mem_get                   | dev_mem_get                   |
 |   | emu_mem_set                   | dev_mem_set                   |
 |   | emu_mem_set_direct            | dev_mem_set_direct            |
+|   | emu_mem_map_add               |                               |
 +---+-------------------------------+-------------------------------+
 | ROM                                                               |
 +---+-------------------------------+-------------------------------+
 |   | emu_rom_load                  |                               |
 +---+-------------------------------+-------------------------------+
+| GENERIC                                                           |
++---+-------------------------------+-------------------------------+
+|   | emu_generic_init              |                               |
+| X | emu_generic_name[]            | dev_generic_name              |
+| X | emu_generic_reset[]           | dev_generic_reset             |
+| X | emu_generic_memory_set[]      | dev_generic_memory_set        |
+| X | emu_generic_name[]            | dev_generic_name              |
+| X | emu_generic_debug_name[]      | dev_generic_debug_name        |
+| X | emu_generic_debug[]           | dev_generic_debug             |
++---+-------------------------------+-------------------------------+
 
-X Function that must be implemented by the user.
+[ X ] Function that must be implemented by the user.

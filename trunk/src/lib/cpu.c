@@ -160,6 +160,7 @@ gboolean run()
 	}
 	update_debugger(TRUE);
 	emu_mem_set_reference(emu_mem_get_reference());
+	generic_update();
 	return FALSE;
 }
 
@@ -279,6 +280,7 @@ static void cpu_step_clicked(GtkButton* cpu_step, gpointer data)
 	previous_ip = ip;
 	ip = emu_cpu_ip();
 	update_debugger(TRUE);
+	generic_update();
 	emu_mem_set_reference(emu_mem_get_reference());
 }
 

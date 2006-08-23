@@ -46,11 +46,11 @@ EXPORT void dev_generic_reset()
  * position that is inside the device memory area.
  *
  * Return value: 
- *   if  0 is returned, the memory will be updated; 
- *   if -1 is returned, the memory will not be updated. */
+ *   if 0 is returned, the memory will not be updated; 
+ *   if -1 is returned, the memory will be updated. */
 EXPORT int dev_generic_memory_set(long pos, unsigned char data)
 {
-	return 0;
+	return -1;
 }
 
 /* The following functions (inside the DEBUG directive) are used only by the
@@ -102,23 +102,23 @@ EXPORT char* dev_generic_debug(int n)
 {
 	switch(n)
 	{
-		case 0:  sprintf(info, "%d", INPT0);  break;
-		case 1:  sprintf(info, "%d", INPT1);  break;
-		case 2:  sprintf(info, "%d", INPT2);  break;
-		case 3:  sprintf(info, "%d", INPT3);  break;
-		case 4:  sprintf(info, "%d", INPT4);  break;
-		case 5:  sprintf(info, "%d", INPT5);  break;
-		case 6:  sprintf(info, "%d", SWCHA);  break;
-		case 7:  sprintf(info, "%d", SWCHB);  break;
-		case 8:  sprintf(info, "%d", SWACNT); break;
-		case 9:  sprintf(info, "%d", SWBCNT); break;
-		case 10: sprintf(info, "%d", INTIM);  break;
-		case 11: sprintf(info, "%d", INSTAT); break;
-		case 12: sprintf(info, "%d", TIM1T);  break;
-		case 13: sprintf(info, "%d", TIM8T);  break;
-		case 14: sprintf(info, "%d", TIM64T); break;
-		case 15: sprintf(info, "%d", T1024T); break;
-		case 16: sprintf(info, "%d", timer);  break;
+		case 0:  sprintf(info, "%d", dev_mem_get(INPT0));  break;
+		case 1:  sprintf(info, "%d", dev_mem_get(INPT1));  break;
+		case 2:  sprintf(info, "%d", dev_mem_get(INPT2));  break;
+		case 3:  sprintf(info, "%d", dev_mem_get(INPT3));  break;
+		case 4:  sprintf(info, "%d", dev_mem_get(INPT4));  break;
+		case 5:  sprintf(info, "%d", dev_mem_get(INPT5));  break;
+		case 6:  sprintf(info, "%d", dev_mem_get(SWCHA));  break;
+		case 7:  sprintf(info, "%d", dev_mem_get(SWCHB));  break;
+		case 8:  sprintf(info, "%d", dev_mem_get(SWACNT)); break;
+		case 9:  sprintf(info, "%d", dev_mem_get(SWBCNT)); break;
+		case 10: sprintf(info, "%d", dev_mem_get(INTIM));  break;
+		case 11: sprintf(info, "%d", dev_mem_get(INSTAT)); break;
+		case 12: sprintf(info, "%d", dev_mem_get(TIM1T));  break;
+		case 13: sprintf(info, "%d", dev_mem_get(TIM8T));  break;
+		case 14: sprintf(info, "%d", dev_mem_get(TIM64T)); break;
+		case 15: sprintf(info, "%d", dev_mem_get(T1024T)); break;
+		case 16: sprintf(info, "%d", dev_mem_get(timer));  break;
 		default: return NULL;
 	}
 	return info;
