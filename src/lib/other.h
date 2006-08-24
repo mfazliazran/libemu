@@ -18,5 +18,6 @@ int has_cpu, has_video, has_ram, generic_count;
 
 /* other functions */
 void generic_update();
+void video_update();
 
 #endif

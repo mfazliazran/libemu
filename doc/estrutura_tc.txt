@@ -34,14 +34,15 @@
 2.3.3.1 Mapas de memória
 2.3.3.2 Espelhamento de memória (bancos de memória)
 2.4 Gráficos
-2.4.1 Memória de Vídeo
-2.4.2 Paleta
-2.4.3 Tipos
-2.4.3.1 Framebuffer
-2.4.3.2 Sincronizado
-2.4.3.3 Tiles/sprites
-2.4.3.4 Vetorial
-2.4.3.5 Tri-dimensional
+2.4.1 Funcionamento de um monitor (vsync, vblank, hsync, overscan e imagem visível)
+2.4.2 Memória de Vídeo
+2.4.3 Paleta
+2.4.4 Tipos
+2.4.4.1 Framebuffer
+2.4.4.2 Sincronizado
+2.4.4.3 Tiles/sprites
+2.4.4.4 Vetorial
+2.4.4.5 Tri-dimensional
 2.5 Som
 2.5.1 Efeitos sonoros pré-gravados
 2.5.2 Efeitos sonoros baseados em onda
@@ -88,6 +89,7 @@
 4.3.1 Tarefas da plataforma de origem
 4.3.2 Tarefas da plataforma de destino
 4.3.3 Debuggers
+4.4 Inflexibilidade do emulador para rodar diferentes tipos de software (ex. hblank)
 
 5 libemu - uma biblioteca para a criação de emuladores
 5.1 Emuladores dos componentes compilados como bibliotecas vinculadas
