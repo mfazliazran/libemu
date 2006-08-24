@@ -5,9 +5,9 @@
 #define MAX_REGISTERS 255
 #define MAX_VERTICAL 12
 
-GtkWidget* generic_window[MAX_GENERIC];
-GtkWidget* generic_register[MAX_GENERIC][MAX_REGISTERS];
-gint num_registers[MAX_GENERIC];
+static GtkWidget* generic_window[MAX_GENERIC];
+static GtkWidget* generic_register[MAX_GENERIC][MAX_REGISTERS];
+static gint num_registers[MAX_GENERIC];
 
 /*
  * EVENT HANDLERS
@@ -132,9 +132,10 @@ int emu_generic_init(char* filename)
 	row = 0; col = 0; i = 0 ;
 	while(emu_generic_debug_name[generic_count](i))
 	{
-		gtk_table_attach_defaults(GTK_TABLE(table),
+		gtk_table_attach(GTK_TABLE(table),
 				gtk_label_new(emu_generic_debug_name[generic_count](i)),
-				col, col+1, row, row+1);
+				col, col+1, row, row+1,
+				GTK_SHRINK, GTK_SHRINK, 0, 0);
 		generic_register[generic_count][i] = gtk_entry_new();
 		gtk_entry_set_width_chars(GTK_ENTRY(generic_register[generic_count][i]), 4);
 		gtk_table_attach_defaults(GTK_TABLE(table),

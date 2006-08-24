@@ -1,0 +1,129 @@
+1. Emuladores
+1.1 Níveis de abstração
+1.1.1 Simuladores
+1.1.2 Emuladores
+1.1.3 Emuladores de alto nível
+1.1.4 Virtualizadores
+1.1.5 Paravirtualizadores
+1.1.6 Outros
+1.2 Filosofia de funcionamento
+1.3 Tipos de emulação
+1.3.1 Interpretação
+1.3.2 Tradução binária estática
+1.3.3 Tradução binária dinâmica
+1.3.4 Virtualização
+1.4 Pequena história da emulação
+1.5 Usos atuais dos emuladores
+1.5.1 Execução de software desenolvido para outra plataforma
+1.5.2 Execução de software legado
+1.5.3 Ferramenta para desenvolvimento
+1.5.4 Educacional
+
+2. Arquitetura de hardware
+2.1 Estrutura de um computador
+2.2 CPU
+2.2.1 Memória interna (flags e registradores)
+2.2.2 Execução
+2.2.2.1 Passos da execução (carregamento, decodificação, execução e retorno)
+2.2.2.2 Tipos de conjuntos de instruções (CISC e RISC)
+2.2.3 Interrupções
+2.3 Memória
+2.3.1 Memória ROM
+2.3.2 Memória RAM
+2.3.3 Memória endereçável
+2.3.3.1 Mapas de memória
+2.3.3.2 Espelhamento de memória (bancos de memória)
+2.4 Gráficos
+2.4.1 Memória de Vídeo
+2.4.2 Paleta
+2.4.3 Tipos
+2.4.3.1 Framebuffer
+2.4.3.2 Sincronizado
+2.4.3.3 Tiles/sprites
+2.4.3.4 Vetorial
+2.4.3.5 Tri-dimensional
+2.5 Som
+2.5.1 Efeitos sonoros pré-gravados
+2.5.2 Efeitos sonoros baseados em onda
+2.5.2.1 PSG
+2.5.2.2 FM
+2.5.3 Efeitos sonoros baseados em amostra
+2.6 Dispositivos de Entrada
+2.6.1 Sistemas de entrada
+2.6.2 Teclado
+2.6.3 Joystick
+2.7 Dispositivos de armazenamento (?)
+2.8 Outros dispositivos
+2.9 Sincronia entre os dispositivos
+
+3 Técnicas tradicionais de construção de emuladores
+3.1 Estrutura de um emulador
+3.2 CPU
+3.3 Memória
+3.3.1 Mapas de memória
+3.3.1.1 Memória ROM
+3.3.2 Espelhamento de memória
+3.4 Gráficos
+3.4.1 Framebuffer
+3.4.2 Sincronizado
+3.4.3 Tiles/sprites
+3.5 Som
+3.5.1 Efeitos sonoros pré-gravados
+3.5.2 Efeitos sonoros baseados em onda
+3.5.2.1 PSG
+3.5.2.2 FM
+3.5.3 Efeitos sonoros baseados em amostra
+3.6 Dispositivos de entrada
+3.7 Dispositivos de armazenamento (?)
+3.8 Outros dispositivos
+3.9 Sincronia entre os dispositivos
+3.10 Obtenção de informações a respeito dos dispositivos
+
+4 Problemas encontrados na criação tradicional de emuladores
+4.1 Falta de modularização
+4.1.1 Dificuldade no reaproveitamento de código
+4.1.2 Impossibilidade no reaproveitamento de binários
+4.2 Falta de portabilidade da plataforma de destino
+4.3 Necessidade de reimplementação de tarefas padrão
+4.3.1 Tarefas da plataforma de origem
+4.3.2 Tarefas da plataforma de destino
+4.3.3 Debuggers
+
+5 libemu - uma biblioteca para a criação de emuladores
+5.1 Emuladores dos componentes compilados como bibliotecas vinculadas
+5.1.1 Filosofia de funcionamento
+5.1.2 Ferramentas auxiliares
+5.1.2.1 emutouch
+5.1.2.2 emucc
+5.1.2.3 emucheck
+5.2 Desenvolvimento de uma biblioteca vinculada
+5.2.1 Filosofia de funcionamento
+5.2.1.1 Carregamento dos dispositivos
+5.2.1.1 Interface gráfica
+5.2.1.2 Debuggers
+5.3 Implementação da biblioteca e das ferramentas auxiliares
+
+6 API da biblioteca
+6.1 Emulador principal
+6.1.1 Memória
+6.1.2 Carregamento de memória ROM
+6.1.2 Dispositivos de entrada
+6.2 CPU
+6.3 Gráficos
+6.4 Som (?)
+6.5 Dispositivos de armazenamento (?)
+6.6 Outros dispositivos
+
+7 Criação de um emulador de Atari 2600 usando a biblioteca libemu
+7.1 Histórico do Atari 2600
+7.2 Componentes
+7.2.1 CPU - MOS 6507
+7.2.2 Gráficos - TIA 
+7.2.2.1 "Truques" de programação
+7.2.3 Som - TIA (?)
+7.2.4 Dispositivo genérico - PIA 6532
+7.2.5 Memória
+7.2.5.1 Mapas de memória
+7.2.5.2 Espelhamento de memória
+7.2.6 Dispositivos de entrada
+7.3 Análise do teste
