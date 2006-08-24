@@ -64,13 +64,13 @@ int emu_generic_init(char* filename)
 	if(generic_count >= MAX_GENERIC)
 	{
 		g_error("There is a limit of %d devices.", generic_count);
-		return 0;
+		return -1;
 	}
 
 	if(emu_mem_size() == 0)
 	{
 		emu_error("The memory size wasn't set yet!");
-		return 0;
+		return -1;
 	}
 
 	/* create path (g_module_open requires a full path) */
@@ -84,7 +84,7 @@ int emu_generic_init(char* filename)
 	if(!generic_mod)
 	{
 		g_error("%s: invalid Generic Device file (%s)", path, g_module_error());
-		return 0;
+		return -1;
 	}
 
 	/* check if it's really a CPU */

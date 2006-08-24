@@ -31,15 +31,12 @@ unsigned long int (*emu_cpu_ip)();
 int (*emu_cpu_step)(int* cycles);
 
 /* Video functions */
-int emu_video_init(char* filename);
+int emu_video_init(char* filename, double video_cycles_per_cpu_cycle);
 char* emu_video_name;
 void (*emu_video_reset)();
 int (*emu_video_memory_set)(unsigned long int pos, unsigned char data);
 char* (*emu_video_debug_name)(int n);
 char* (*emu_video_debug)(int n);
-void (*emu_video_set_sync)(double cpu_ratio, int vsync_scanlines, 
-		int vblank_scanlines, int visible_scanlines,
-		int overscan_scanlines, int hblank_video_cycles);
 
 /* Generic device functions */
 int emu_generic_init(char* filename);

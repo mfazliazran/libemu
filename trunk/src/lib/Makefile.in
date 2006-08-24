@@ -73,8 +73,11 @@ EXEEXT = @EXEEXT@
 F77 = @F77@
 GCJ = @GCJ@
 GCJFLAGS = @GCJFLAGS@
+HAVE_LIB = @HAVE_LIB@
+LIB = @LIB@
 LIBTOOL = @LIBTOOL@
 LN_S = @LN_S@
+LTLIB = @LTLIB@
 MAKEINFO = @MAKEINFO@
 MMS_BITFIELDS = @MMS_BITFIELDS@
 OBJDUMP = @OBJDUMP@
@@ -88,7 +91,7 @@ VERSION = @VERSION@
 
 lib_LTLIBRARIES = libemu.la
 
-libemu_la_SOURCES = libemu.c cpu.c ram.c rom.c generic.c other.c other.h
+libemu_la_SOURCES = libemu.c cpu.c ram.c rom.c video.c generic.c other.c other.h
 libemu_la_LIBADD = $(DEPS_LIBS)
 
 libemu_la_LDFLAGS = -version-info 0:0:0
@@ -106,7 +109,8 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 libemu_la_DEPENDENCIES = 
-libemu_la_OBJECTS =  libemu.lo cpu.lo ram.lo rom.lo other.lo
+libemu_la_OBJECTS =  libemu.lo cpu.lo ram.lo rom.lo video.lo generic.lo \
+other.lo
 CFLAGS = @CFLAGS@
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -121,8 +125,8 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
 GZIP_ENV = --best
-DEP_FILES =  .deps/cpu.P .deps/libemu.P .deps/other.P .deps/ram.P \
-.deps/rom.P
+DEP_FILES =  .deps/cpu.P .deps/generic.P .deps/libemu.P .deps/other.P \
+.deps/ram.P .deps/rom.P .deps/video.P
 SOURCES = $(libemu_la_SOURCES)
 OBJECTS = $(libemu_la_OBJECTS)
 
