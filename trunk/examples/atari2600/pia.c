@@ -118,7 +118,7 @@ EXPORT char* dev_generic_debug(int n)
 		case 13: sprintf(info, "%d", dev_mem_get(TIM8T));  break;
 		case 14: sprintf(info, "%d", dev_mem_get(TIM64T)); break;
 		case 15: sprintf(info, "%d", dev_mem_get(T1024T)); break;
-		case 16: sprintf(info, "%d", dev_mem_get(timer));  break;
+		case 16: sprintf(info, "%d", timer);  break;
 		default: return NULL;
 	}
 	return info;
