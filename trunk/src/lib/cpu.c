@@ -118,11 +118,28 @@ static void update_debugger(gboolean find_ip)
 	/* TODO - scroll to */
 }
 
+/* Execute one step */
+static inline gboolean execute_one_step()
+{
+	int num_cycles;
+
+	if(!emu_cpu_step(&num_cycles))
+	{
+		emu_error(g_strdup_printf("Instruction invalid in address 0x%04X!", emu_cpu_ip()));
+		if(running)
+		{
+			cpu_run_pause_clicked(NULL, NULL);
+		}
+		update_debugger(TRUE);
+		return FALSE;
+	}
+	ip = emu_cpu_ip();
+}
+
 /* Thread that runs the emulator */
 gboolean run()
 {
 	BKP *bkp;
-	int num_cycles;
 	GtkTreeIter iter;
 
 	/* clear IP from debugger */
@@ -139,14 +156,8 @@ gboolean run()
 	previous_ip = ip;
 	while(running)
 	{
-		if(!emu_cpu_step(&num_cycles))
-		{
-			emu_error(g_strdup_printf("Instruction invalid in address 0x%04X!", emu_cpu_ip()));
-			cpu_run_pause_clicked(NULL, NULL);
-			update_debugger(TRUE);
+		if(!execute_one_step())
 			return FALSE;
-		}
-		ip = emu_cpu_ip();
 
 		/* check if it's a breakpoint */
 		if(is_breakpoint(ip, TRUE))
@@ -270,14 +281,11 @@ static void cpu_reference_changed(GtkEntry* entry, gpointer data)
 /* When the step button is clicked */
 static void cpu_step_clicked(GtkButton* cpu_step, gpointer data)
 {
-	int num_cycles;
-
-	if(!emu_cpu_step(&num_cycles))
-	{
-		emu_error(g_strdup_printf("Instruction invalid in address 0x%04X!", ip));
-		return;
-	}
 	previous_ip = ip;
+
+	if(!execute_one_step())
+		return;
+
 	ip = emu_cpu_ip();
 	update_debugger(TRUE);
 	generic_update();
