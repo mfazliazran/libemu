@@ -167,15 +167,12 @@ void emu_mem_init(unsigned long sz)
 	}
 
 	ram = g_malloc(sz);
-	// ram = g_new(char, sz);
 
-	/*
 	if(!ram)
 	{
 		g_error("Not enough free memory when reseving memory for RAM.");
 		return;
 	}
-	*/
 	size = sz;
 
 	/* Add a new menu option */
@@ -322,8 +319,11 @@ int emu_mem_map_add(int device, unsigned long int initial, unsigned long int fin
 {
 	MEMORY_MAP *mm;
 
-	if(device > (generic_count - 1) || (device < 0 && device != VIDEO))
+	if(device > generic_count || (device <= 0 && device != VIDEO))
+	{
+		emu_error("Invalid device.");
 		return 0;
+	}
 
 	mm = g_malloc(sizeof(MEMORY_MAP));
 	mm->device = device;

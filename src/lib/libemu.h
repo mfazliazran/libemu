@@ -33,15 +33,22 @@ int (*emu_cpu_step)(int* cycles);
 /* Video functions */
 int emu_video_init(char* filename, double video_cycles_per_cpu_cycle);
 char* emu_video_name;
+int *emu_video_draw_frame;
+int *emu_video_scanline_cycles;
+int *emu_video_vblank_scanlines;
+int *emu_video_picture_scanlines;
+int *emu_video_overscan_scanlines;
 void (*emu_video_reset)();
+void (*emu_video_step)(int cycles);
 int (*emu_video_memory_set)(unsigned long int pos, unsigned char data);
 char* (*emu_video_debug_name)(int n);
 char* (*emu_video_debug)(int n);
 
 /* Generic device functions */
-int emu_generic_init(char* filename);
+int emu_generic_init(char* filename, double device_cycles_per_cpu_cycle);
 char* emu_generic_name[MAX_GENERIC];
 void (*emu_generic_reset[MAX_GENERIC])();
+void (*emu_generic_step[MAX_GENERIC])(int cycles);
 int (*emu_generic_memory_set[MAX_GENERIC])(unsigned long int pos, unsigned char data);
 char* (*emu_generic_debug_name[MAX_GENERIC])(int n);
 char* (*emu_generic_debug[MAX_GENERIC])(int n);

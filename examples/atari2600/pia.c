@@ -30,12 +30,29 @@ EXPORT char dev_type[] = "generic";
 /* Fill in the name of the device */
 EXPORT char dev_generic_name[] = "PIA 6532";
 
+/* There are three types of sync:
+ * - EXACT_SYNC: this type of sync will execute one device step for each
+ * cpu step
+ * - HORIZONTAL_SYNC: this will execute one device step for each line that is
+ * shown on the monitor
+ * - VERTICAL_SYNC: this will execute one device step for each frame that is
+ *   shown on the screen */
+EXPORT SYNC_TYPE dev_generic_sync_type = EXACT_SYNC;
+
 char tmp[1000];
 
 /* You must implement this function.
  *
  * This function initializes the device. */
 EXPORT void dev_generic_reset()
+{
+
+}
+
+/* Executes one step. Read the info on dev_generic_sync_type above to understand
+ * how this function works. [cycles] is the number of cycles that must be 
+ * executed, and it'll be 0 if dev_generic_sync_type is VERTICAL_SYNC. */
+EXPORT void dev_generic_step(int cycles)
 {
 
 }

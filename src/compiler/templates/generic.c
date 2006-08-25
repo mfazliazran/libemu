@@ -12,6 +12,14 @@ EXPORT char dev_type[] = "generic";
 /* Fill in the name of the device */
 EXPORT char dev_generic_name[] = "";
 
+/* This variable sets the type of synchronization this device will have with
+ * the rest of the computer. A setting of EXACT_SYNC means that dev_generic_step
+ * will be executed for each cpu step. HORIZONTAL_SYNC means that
+ * dev_generic_step will be execute every time a line scanline is completed on
+ * the display. A setting of VERTICAL_SYNC means that dev_generic step will only
+ * be after a new frame is displayed. */
+EXPORT SYNC_TYPE dev_generic_sync_type = EXACT_SYNC;
+
 char tmp[1000];
 
 /* You must implement this function.
@@ -33,6 +41,14 @@ EXPORT void dev_generic_reset()
 EXPORT int dev_generic_memory_set(long pos, unsigned char data)
 {
 	return -1;
+}
+
+/* Executes one step. Read the info on dev_generic_sync_type above to understand
+ * how this function works. [cycles] is the number of cycles that must be 
+ * executed, and it'll be 0 if dev_generic_sync_type is VERTICAL_SYNC. */
+EXPORT void dev_generic_step(int cycles)
+{
+
 }
 
 /* The following functions (inside the DEBUG directive) are used only by the

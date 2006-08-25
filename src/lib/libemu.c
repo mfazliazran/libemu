@@ -7,7 +7,8 @@ void emu_init(int argc, char** argv)
 	GtkWidget *vbox; 
 	GtkWidget *machine_menu, *machine_item, *run_item, *debug_item;
 	
-	has_cpu = has_video = has_ram = generic_count = 0;
+	has_cpu = has_video = has_ram = 0;
+	generic_count = 1;
 	
 	gtk_init(&argc, &argv);
 	

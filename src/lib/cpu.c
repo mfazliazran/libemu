@@ -726,5 +726,5 @@ int emu_cpu_init(char* filename)
 
 	cpu_loaded = TRUE;
 
-	return 1;
+	return CPU;
 }

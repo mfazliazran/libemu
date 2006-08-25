@@ -60,6 +60,7 @@ int emu_video_init(char* filename, double video_cycles_per_cpu_cycle)
 	GtkWidget *debug_item;
 	GtkWidget *table, *label;
 	gint row, col, i;
+	SYNC_TYPE* sync;
 
 	if(video_loaded)
 	{
@@ -87,7 +88,7 @@ int emu_video_init(char* filename, double video_cycles_per_cpu_cycle)
 		return 0;
 	}
 
-	/* check if it's really a CPU */
+	/* check if it's really a video */
 	if(!g_module_symbol(video_mod, "dev_type", (gpointer*)&type))
 		g_error("variable dev_type not defined in %s", path);
 	if(strcmp(type, "video"))
@@ -96,8 +97,24 @@ int emu_video_init(char* filename, double video_cycles_per_cpu_cycle)
 	/* Connect functions */
 	if(!g_module_symbol(video_mod, "dev_video_name", (gpointer*)&emu_video_name))
 		g_error("variable dev_video_name not defined in %s", path);
+	if(!g_module_symbol(video_mod, "dev_video_sync_type", (gpointer*)&sync))
+		g_error("variable dev_video_sync_type is not defined");
+	emu_video_sync = *sync;
+	emu_video_cycles = video_cycles_per_cpu_cycle;
+	if(!g_module_symbol(video_mod, "dev_video_draw_frame", (gpointer*)&emu_video_draw_frame))
+		g_error("variable dev_video_draw_frame is not defined");
+	if(!g_module_symbol(video_mod, "dev_video_scanline_cycles", (gpointer*)&emu_video_scanline_cycles))
+		g_error("variable dev_video_scanline_cycles is not defined");
+	if(!g_module_symbol(video_mod, "dev_video_vblank_scanlines", (gpointer*)&emu_video_vblank_scanlines))
+		g_error("variable dev_video_vblank_scanlines is not defined");
+	if(!g_module_symbol(video_mod, "dev_video_picture_scanlines", (gpointer*)&emu_video_picture_scanlines))
+		g_error("variable dev_video_picture_scanlines is not defined");
+	if(!g_module_symbol(video_mod, "dev_video_overscan_scanlines", (gpointer*)&emu_video_overscan_scanlines))
+		g_error("variable dev_video_overscan_scanlines is not defined");
 	if(!g_module_symbol(video_mod, "dev_video_reset", (void*)&emu_video_reset))
 		g_error("variable dev_video_reset not defined in %s", path);
+	if(!g_module_symbol(video_mod, "dev_video_step", (void*)&emu_video_step))
+		g_error("variable dev_video_step not defined in %s", path);
 	if(!g_module_symbol(video_mod, "dev_video_memory_set", (void*)&emu_video_memory_set))
 		g_error("variable dev_video_memory_set not defined in %s", path);
 	if(!g_module_symbol(video_mod, "dev_video_debug_name", (void*)&emu_video_debug_name))
@@ -155,5 +172,5 @@ int emu_video_init(char* filename, double video_cycles_per_cpu_cycle)
 	gtk_container_add(GTK_CONTAINER(video_window), table);
 	gtk_widget_show_all(table);
 
-	return -1;
+	return VIDEO;
 }
