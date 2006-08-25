@@ -42,7 +42,7 @@ static gboolean generic_hide(GtkWidget *widget, GdkEvent *event, gpointer data)
 void generic_update()
 {
 	int i, n;
-	for(n=0; n<generic_count; n++)
+	for(n=1; n<generic_count; n++)
 		if(GTK_WIDGET_VISIBLE(generic_window[n]))
 			for(i=0; i<num_registers[n]; i++)
 				gtk_entry_set_text(GTK_ENTRY(generic_register[n][i]), emu_generic_debug[n](i));
@@ -52,25 +52,27 @@ void generic_update()
  * API
  */
 
-/* Create a new generic device, and return its number */
-int emu_generic_init(char* filename)
+/* Create a new generic device, and return its number (starting in 1), or zero 
+ * in case of error. */
+int emu_generic_init(char* filename, double device_cycles_per_cpu_cycle)
 {
 	GModule *generic_mod;
 	gchar *path, *type;
 	GtkWidget *debug_item;
 	GtkWidget *table, *label;
 	gint row, col, i;
+	SYNC_TYPE* sync;
 
 	if(generic_count >= MAX_GENERIC)
 	{
 		g_error("There is a limit of %d devices.", generic_count);
-		return -1;
+		return 0;
 	}
 
 	if(emu_mem_size() == 0)
 	{
 		emu_error("The memory size wasn't set yet!");
-		return -1;
+		return 0;
 	}
 
 	/* create path (g_module_open requires a full path) */
@@ -84,10 +86,10 @@ int emu_generic_init(char* filename)
 	if(!generic_mod)
 	{
 		g_error("%s: invalid Generic Device file (%s)", path, g_module_error());
-		return -1;
+		return 0;
 	}
 
-	/* check if it's really a CPU */
+	/* check if it's really a generic device */
 	if(!g_module_symbol(generic_mod, "dev_type", (gpointer*)&type))
 		g_error("variable dev_type not defined in %s", path);
 	if(strcmp(type, "generic"))
@@ -96,8 +98,15 @@ int emu_generic_init(char* filename)
 	/* Connect functions */
 	if(!g_module_symbol(generic_mod, "dev_generic_name", (gpointer*)&emu_generic_name[generic_count]))
 		g_error("variable dev_generic_name not defined in %s", path);
+	if(!g_module_symbol(generic_mod, "dev_generic_sync_type", (gpointer*)&sync))
+		g_error("variable dev_generic_sync_type is not defined");
+	/* TODO - can't load generic device synched with video if there's no video */
+	emu_generic_sync[generic_count] = *sync;
+	emu_generic_cycles[generic_count] = device_cycles_per_cpu_cycle;
 	if(!g_module_symbol(generic_mod, "dev_generic_reset", (void*)&emu_generic_reset[generic_count]))
 		g_error("variable dev_generic_reset not defined in %s", path);
+	if(!g_module_symbol(generic_mod, "dev_generic_step", (void*)&emu_generic_step[generic_count]))
+		g_error("variable dev_generic_step not defined in %s", path);
 	if(!g_module_symbol(generic_mod, "dev_generic_memory_set", (void*)&emu_generic_memory_set[generic_count]))
 		g_error("variable dev_generic_memory_set not defined in %s", path);
 	if(!g_module_symbol(generic_mod, "dev_generic_debug_name", (void*)&emu_generic_debug_name[generic_count]))
@@ -156,5 +165,5 @@ int emu_generic_init(char* filename)
 	gtk_widget_show_all(table);
 
 	generic_count++;
-	return generic_count - 1;
+	return generic_count-1;
 }

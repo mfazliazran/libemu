@@ -14,7 +14,7 @@
 1.3.4 Virtualização
 1.4 Pequena história da emulação
 1.5 Usos atuais dos emuladores
-1.5.1 Execução de software desenolvido para outra plataforma
+1.5.1 Execução de software desenvolvido para outra plataforma
 1.5.2 Execução de software legado
 1.5.3 Ferramenta para desenvolvimento
 1.5.4 Educacional
