@@ -33,11 +33,13 @@ int (*emu_cpu_step)(int* cycles);
 /* Video functions */
 int emu_video_init(char* filename, double video_cycles_per_cpu_cycle);
 char* emu_video_name;
-int *emu_video_draw_frame;
+int *emu_video_pixels_x;
+int *emu_video_pixels_y;
 int *emu_video_scanline_cycles;
-int *emu_video_vblank_scanlines;
-int *emu_video_picture_scanlines;
-int *emu_video_overscan_scanlines;
+int *emu_video_scanlines_vblank;
+int *emu_video_scanlines_overscan;
+int *emu_video_pos_x;
+int *emu_video_pos_y;
 void (*emu_video_reset)();
 void (*emu_video_step)(int cycles);
 int (*emu_video_memory_set)(unsigned long int pos, unsigned char data);

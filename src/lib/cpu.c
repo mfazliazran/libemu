@@ -20,6 +20,7 @@ static GtkListStore *store;
 static long int ip, previous_ip;
 static GSList* breakpoints;
 static gchar* previous_reference;
+glong original_x = 0, total_cycles = 0;
 
 /* Prototypes */
 static void cpu_run_pause_clicked(GtkButton* cpu_run_pause, gpointer data);
@@ -30,6 +31,7 @@ enum
 	ADDRESS = 0,  /* The hexa address (F432)                       */
 	BYTES,        /* The bytes that for the instruction (F4 B2 02) */
 	INSTRUCTION,  /* The instruction (MOV A 42)                    */
+	CYCLES,       /* Number of cycles of the instruction           */
 	BG_COLOR,     /* The color of the cell background              */
 	LONG_ADDRESS, /* The numeric address, for consulting           */
 	N_COLUMNS     /* The number of columns                         */
@@ -40,7 +42,7 @@ enum
  */
 
 /* Returns if a given position has a breakpoint */
-static gboolean is_breakpoint(unsigned long int pos, gboolean delete_weak)
+static inline gboolean is_breakpoint(unsigned long int pos, gboolean delete_weak)
 {
 	GSList *list;
 
@@ -114,26 +116,98 @@ static void update_debugger(gboolean find_ip)
 
 	if(!found && find_ip)
 		emu_cpu_set_debugger_reference(ip);
+}
 
-	/* TODO - scroll to */
+static inline void execute_generic_step_exact()
+{
+	int i;
+	for(i=1; i<generic_count+1; i++)
+		if(emu_generic_sync[i] == EXACT_SYNC)
+			emu_generic_step[i](1);
+}
+
+static inline void execute_generic_step_horizontal()
+{
+	int i;
+	for(i=1; i<generic_count+1; i++)
+		if(emu_generic_sync[i] == HORIZONTAL_SYNC)
+			emu_generic_step[i](1);
+}
+
+static inline void execute_generic_step_vertical()
+{
+	int i;
+	for(i=1; i<generic_count+1; i++)
+		if(emu_generic_sync[i] == VERTICAL_SYNC)
+			emu_generic_step[i](1);
 }
 
 /* Execute one step */
 static inline gboolean execute_one_step()
 {
-	int num_cycles;
+	int num_cycles, i;
 
 	if(!emu_cpu_step(&num_cycles))
 	{
 		emu_error(g_strdup_printf("Instruction invalid in address 0x%04X!", emu_cpu_ip()));
 		if(running)
-		{
 			cpu_run_pause_clicked(NULL, NULL);
-		}
 		update_debugger(TRUE);
 		return FALSE;
 	}
+	switch(emu_video_sync)
+	{
+		case EXACT_SYNC:
+		{
+			int video_cycles = emu_video_cycles * num_cycles;
+			emu_video_step(video_cycles);
+			if(((*emu_video_pos_x) + video_cycles) > (*emu_video_scanline_cycles))
+			{
+				*emu_video_pos_y += (int)(((*emu_video_pos_x) + video_cycles) / (*emu_video_scanline_cycles));
+				*emu_video_pos_x = ((*emu_video_pos_x) + video_cycles) - (*emu_video_scanline_cycles);
+			}
+			else
+				*emu_video_pos_x = (*emu_video_pos_x) + video_cycles;
+		}
+			break;
+		case HORIZONTAL_SYNC:
+		{
+			int video_cycles = emu_video_cycles * num_cycles;
+			total_cycles += video_cycles;
+			if((original_x + total_cycles) > (*emu_video_scanline_cycles))
+			{
+				emu_video_step(total_cycles);
+				total_cycles = 0;
+				original_x = *emu_video_pos_x;
+			}
+			if(((*emu_video_pos_x) + video_cycles) > (*emu_video_scanline_cycles))
+			{
+				*emu_video_pos_y += (int)(((*emu_video_pos_x) + video_cycles) / (*emu_video_scanline_cycles));
+				*emu_video_pos_x = ((*emu_video_pos_x) + video_cycles) - (*emu_video_scanline_cycles);
+			}
+			else
+				*emu_video_pos_x = (*emu_video_pos_x) + video_cycles;
+		}
+			break;
+		case VERTICAL_SYNC:
+			*emu_video_pos_x += (emu_video_cycles * num_cycles);
+			while(*emu_video_pos_x > (*emu_video_scanline_cycles))
+			{
+				*emu_video_pos_x -= (*emu_video_scanline_cycles);
+				*emu_video_pos_y += 1;
+				if(((*emu_video_pos_y) + 1) > ((*emu_video_scanlines_vblank) + (*emu_video_pixels_y)))
+				{
+					emu_video_step(1);
+					execute_generic_step_vertical();
+				}
+				if(((*emu_video_pos_y) + 1) > ((*emu_video_scanlines_vblank) + (*emu_video_pixels_y) + (*emu_video_scanlines_overscan)))
+					*emu_video_pos_y = 0; /* todo draw */
+			}
+			break;
+	}
+
 	ip = emu_cpu_ip();
+	return TRUE;
 }
 
 /* Thread that runs the emulator */
@@ -164,6 +238,8 @@ gboolean run()
 		{
 			cpu_run_pause_clicked(NULL, NULL);
 			update_debugger(TRUE);
+			video_update();
+			generic_update();
 			return FALSE;
 		}
 
@@ -171,6 +247,7 @@ gboolean run()
 	}
 	update_debugger(TRUE);
 	emu_mem_set_reference(emu_mem_get_reference());
+	video_update();
 	generic_update();
 	return FALSE;
 }
@@ -288,6 +365,7 @@ static void cpu_step_clicked(GtkButton* cpu_step, gpointer data)
 
 	ip = emu_cpu_ip();
 	update_debugger(TRUE);
+	video_update();
 	generic_update();
 	emu_mem_set_reference(emu_mem_get_reference());
 }
@@ -347,6 +425,7 @@ void emu_cpu_set_debugger_reference(unsigned long initial_pos)
 	{
 		gchar* inst;
 		gchar* data;
+		gchar* cyc;
 		gchar* buf = emu_cpu_debug(pos, &cycles, &bytes);
 		if(buf == NULL)
 		{
@@ -358,6 +437,7 @@ void emu_cpu_set_debugger_reference(unsigned long initial_pos)
 			else
 				inst = g_strdup_printf("DATA (%c)", bt);
 			data = g_strdup_printf("%02X", bt);
+			cyc = g_strdup_printf("0");
 		}
 		else
 		{
@@ -365,6 +445,7 @@ void emu_cpu_set_debugger_reference(unsigned long initial_pos)
 			data = g_strdup_printf("%02X", emu_mem_get(pos));
 			for(j=1; j<bytes; j++)
 				data = g_strdup_printf("%s %02X", data, emu_mem_get(pos+j));
+			cyc = g_strdup_printf("%d", cycles);
 		}
 		gtk_list_store_append(store, &iter);
 		gtk_list_store_set(store, &iter,
@@ -373,6 +454,7 @@ void emu_cpu_set_debugger_reference(unsigned long initial_pos)
 				INSTRUCTION, inst,
 				BG_COLOR, NULL,
 				LONG_ADDRESS, pos,
+				CYCLES, cyc,
 				-1);
 		g_free(inst);
 		g_free(data);
@@ -555,7 +637,7 @@ int emu_cpu_init(char* filename)
 	cpu_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title(GTK_WINDOW(cpu_window), emu_cpu_name);
 	gtk_window_set_destroy_with_parent(GTK_WINDOW(cpu_window), TRUE);
-	gtk_window_set_default_size(GTK_WINDOW(cpu_window), 280, 435);
+	gtk_window_set_default_size(GTK_WINDOW(cpu_window), 310, 435);
 	g_signal_connect(cpu_window, "delete_event", G_CALLBACK(cpu_hide), debug_item);
 
 	tips = gtk_tooltips_new();
@@ -608,10 +690,10 @@ int emu_cpu_init(char* filename)
 
 	/* Debugger list */
 	store = gtk_list_store_new(N_COLUMNS, 
-			G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_LONG);
+			G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_LONG);
 	cpu_debugger = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
 	gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(cpu_debugger), TRUE);
-	for(i=0; i<3; i++)
+	for(i=0; i<4; i++)
 	{
 		column = gtk_tree_view_column_new();
 		switch(i)
@@ -624,6 +706,9 @@ int emu_cpu_init(char* filename)
 				break;
 			case INSTRUCTION:
 				gtk_tree_view_column_set_title(column, "Instruction");
+				break;
+			case CYCLES:
+				gtk_tree_view_column_set_title(column, "Cycles");
 				break;
 		}
 		gtk_tree_view_append_column(GTK_TREE_VIEW(cpu_debugger), column);

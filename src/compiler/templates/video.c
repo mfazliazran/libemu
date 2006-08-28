@@ -12,6 +12,10 @@ EXPORT char dev_type[] = "video";
 /* Fill in the name of the device */
 EXPORT char dev_video_name[] = "";
 
+/* These two variables set the number of horizontal and vertical pixels. */
+EXPORT int dev_video_pixels_x = 0;
+EXPORT int dev_video_pixels_y  = 0;
+
 /* Change this variable to -1 to update the video image to the user. The
  * variable will be automaticly set to 0. */
 EXPORT int dev_video_draw_frame = 0;
