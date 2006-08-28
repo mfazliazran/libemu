@@ -104,16 +104,10 @@ int main(int argc, char** argv)
 			gm_error("variable dev_video_name is not defined");
 		if(!g_module_symbol(mod, "dev_video_sync_type", &sym))
 			gm_error("variable dev_video_sync_type is not defined");
-		if(!g_module_symbol(mod, "dev_video_draw_frame", &sym))
-			gm_error("variable dev_video_draw_frame is not defined");
-		if(!g_module_symbol(mod, "dev_video_scanline_cycles", &sym))
-			gm_error("variable dev_video_scanline_cycles is not defined");
-		if(!g_module_symbol(mod, "dev_video_vblank_scanlines", &sym))
-			gm_error("variable dev_video_vblank_scanlines is not defined");
-		if(!g_module_symbol(mod, "dev_video_picture_scanlines", &sym))
-			gm_error("variable dev_video_picture_scanlines is not defined");
-		if(!g_module_symbol(mod, "dev_video_overscan_scanlines", &sym))
-			gm_error("variable dev_video_overscan_scanlines is not defined");
+		if(!g_module_symbol(mod, "dev_video_pixels_x", &sym))
+			gm_error("variable dev_video_pixels_x is not defined");
+		if(!g_module_symbol(mod, "dev_video_pixels_y", &sym))
+			gm_error("variable dev_video_pixels_y is not defined");
 		if(!g_module_symbol(mod, "dev_video_reset", &sym))
 			gm_error("function dev_video_reset is not implemented");
 		if(!g_module_symbol(mod, "dev_video_step", &sym))

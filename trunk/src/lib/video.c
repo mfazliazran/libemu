@@ -101,16 +101,23 @@ int emu_video_init(char* filename, double video_cycles_per_cpu_cycle)
 		g_error("variable dev_video_sync_type is not defined");
 	emu_video_sync = *sync;
 	emu_video_cycles = video_cycles_per_cpu_cycle;
-	if(!g_module_symbol(video_mod, "dev_video_draw_frame", (gpointer*)&emu_video_draw_frame))
-		g_error("variable dev_video_draw_frame is not defined");
+
 	if(!g_module_symbol(video_mod, "dev_video_scanline_cycles", (gpointer*)&emu_video_scanline_cycles))
 		g_error("variable dev_video_scanline_cycles is not defined");
-	if(!g_module_symbol(video_mod, "dev_video_vblank_scanlines", (gpointer*)&emu_video_vblank_scanlines))
-		g_error("variable dev_video_vblank_scanlines is not defined");
-	if(!g_module_symbol(video_mod, "dev_video_picture_scanlines", (gpointer*)&emu_video_picture_scanlines))
-		g_error("variable dev_video_picture_scanlines is not defined");
-	if(!g_module_symbol(video_mod, "dev_video_overscan_scanlines", (gpointer*)&emu_video_overscan_scanlines))
-		g_error("variable dev_video_overscan_scanlines is not defined");
+	if(!g_module_symbol(video_mod, "dev_video_scanlines_vblank", (gpointer*)&emu_video_scanlines_vblank))
+		g_error("variable dev_video_scanlines_vblank is not defined");
+	if(!g_module_symbol(video_mod, "dev_video_scanlines_overscan", (gpointer*)&emu_video_scanlines_overscan))
+		g_error("variable dev_video_scanlines_overscan is not defined");
+	if(!g_module_symbol(video_mod, "dev_video_pos_x", (gpointer*)&emu_video_pos_x))
+		g_error("variable dev_video_pos_x is not defined");
+	if(!g_module_symbol(video_mod, "dev_video_pos_y", (gpointer*)&emu_video_pos_y))
+		g_error("variable dev_video_pos_y is not defined");
+	*emu_video_pos_x = *emu_video_pos_y = 0;
+
+	if(!g_module_symbol(video_mod, "dev_video_pixels_x", (gpointer*)&emu_video_pixels_x))
+		g_error("variable dev_video_pixels_x is not defined");
+	if(!g_module_symbol(video_mod, "dev_video_pixels_y", (gpointer*)&emu_video_pixels_y))
+		g_error("variable dev_video_pixels_y is not defined");
 	if(!g_module_symbol(video_mod, "dev_video_reset", (void*)&emu_video_reset))
 		g_error("variable dev_video_reset not defined in %s", path);
 	if(!g_module_symbol(video_mod, "dev_video_step", (void*)&emu_video_step))

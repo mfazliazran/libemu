@@ -285,6 +285,8 @@ void emu_mem_set(unsigned long int pos, unsigned char data)
 			switch(((MEMORY_MAP*)(list->data))->device)
 			{
 				case VIDEO:
+					if(!emu_video_memory_set(pos, data))
+						set_memory = FALSE;
 					break;
 				default:
 					if(!emu_generic_memory_set[((MEMORY_MAP*)(list->data))->device](pos, data))
