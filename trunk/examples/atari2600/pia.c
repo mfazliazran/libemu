@@ -46,7 +46,7 @@ char tmp[1000];
  * This function initializes the device. */
 EXPORT void dev_generic_reset()
 {
-	dev_message("pia step");
+
 }
 
 /* Executes one step. Read the info on dev_generic_sync_type above to understand
@@ -54,7 +54,7 @@ EXPORT void dev_generic_reset()
  * executed, and it'll be 0 if dev_generic_sync_type is VERTICAL_SYNC. */
 EXPORT void dev_generic_step(int cycles)
 {
-
+	dev_message("pia step");
 }
 
 /* You must implement this function.

@@ -20,7 +20,7 @@ static GtkListStore *store;
 static long int ip, previous_ip;
 static GSList* breakpoints;
 static gchar* previous_reference;
-glong original_x = 0, total_cycles = 0;
+glong h_cycles = 0, total_cycles = 0;
 
 /* Prototypes */
 static void cpu_run_pause_clicked(GtkButton* cpu_run_pause, gpointer data);
@@ -118,34 +118,26 @@ static void update_debugger(gboolean find_ip)
 		emu_cpu_set_debugger_reference(ip);
 }
 
-static inline void execute_generic_step_exact()
+static inline void execute_generic_step_exact(int num_cycles)
 {
 	int i;
-	for(i=1; i<generic_count+1; i++)
+	for(i=1; i<generic_count; i++)
 		if(emu_generic_sync[i] == EXACT_SYNC)
-			emu_generic_step[i](1);
+			emu_generic_step[i](num_cycles * emu_generic_cycles[i]);
 }
 
-static inline void execute_generic_step_horizontal()
+static inline void execute_generic_step_horizontal(int num_cycles)
 {
 	int i;
-	for(i=1; i<generic_count+1; i++)
+	for(i=1; i<generic_count; i++)
 		if(emu_generic_sync[i] == HORIZONTAL_SYNC)
-			emu_generic_step[i](1);
-}
-
-static inline void execute_generic_step_vertical()
-{
-	int i;
-	for(i=1; i<generic_count+1; i++)
-		if(emu_generic_sync[i] == VERTICAL_SYNC)
-			emu_generic_step[i](1);
+			emu_generic_step[i](num_cycles * emu_generic_cycles[i]);
 }
 
 /* Execute one step */
 static inline gboolean execute_one_step()
 {
-	int num_cycles, i;
+	int num_cycles, i, video_cycles;
 
 	if(!emu_cpu_step(&num_cycles))
 	{
@@ -155,56 +147,30 @@ static inline gboolean execute_one_step()
 		update_debugger(TRUE);
 		return FALSE;
 	}
-	switch(emu_video_sync)
+
+	video_cycles = emu_video_cycles * num_cycles;
+	if(emu_video_sync == EXACT_SYNC)
+		emu_video_step(video_cycles);
+	execute_generic_step_exact(num_cycles);
+
+	h_cycles += video_cycles;
+	total_cycles += num_cycles;
+	if(h_cycles > (*emu_video_scanline_cycles))
 	{
-		case EXACT_SYNC:
-		{
-			int video_cycles = emu_video_cycles * num_cycles;
-			emu_video_step(video_cycles);
-			if(((*emu_video_pos_x) + video_cycles) > (*emu_video_scanline_cycles))
-			{
-				*emu_video_pos_y += (int)(((*emu_video_pos_x) + video_cycles) / (*emu_video_scanline_cycles));
-				*emu_video_pos_x = ((*emu_video_pos_x) + video_cycles) - (*emu_video_scanline_cycles);
-			}
-			else
-				*emu_video_pos_x = (*emu_video_pos_x) + video_cycles;
-		}
-			break;
-		case HORIZONTAL_SYNC:
-		{
-			int video_cycles = emu_video_cycles * num_cycles;
-			total_cycles += video_cycles;
-			if((original_x + total_cycles) > (*emu_video_scanline_cycles))
-			{
-				emu_video_step(total_cycles);
-				total_cycles = 0;
-				original_x = *emu_video_pos_x;
-			}
-			if(((*emu_video_pos_x) + video_cycles) > (*emu_video_scanline_cycles))
-			{
-				*emu_video_pos_y += (int)(((*emu_video_pos_x) + video_cycles) / (*emu_video_scanline_cycles));
-				*emu_video_pos_x = ((*emu_video_pos_x) + video_cycles) - (*emu_video_scanline_cycles);
-			}
-			else
-				*emu_video_pos_x = (*emu_video_pos_x) + video_cycles;
-		}
-			break;
-		case VERTICAL_SYNC:
-			*emu_video_pos_x += (emu_video_cycles * num_cycles);
-			while(*emu_video_pos_x > (*emu_video_scanline_cycles))
-			{
-				*emu_video_pos_x -= (*emu_video_scanline_cycles);
-				*emu_video_pos_y += 1;
-				if(((*emu_video_pos_y) + 1) > ((*emu_video_scanlines_vblank) + (*emu_video_pixels_y)))
-				{
-					emu_video_step(1);
-					execute_generic_step_vertical();
-				}
-				if(((*emu_video_pos_y) + 1) > ((*emu_video_scanlines_vblank) + (*emu_video_pixels_y) + (*emu_video_scanlines_overscan)))
-					*emu_video_pos_y = 0; /* todo draw */
-			}
-			break;
+		if(emu_video_sync == HORIZONTAL_SYNC)
+			emu_video_step(h_cycles);
+		execute_generic_step_horizontal(total_cycles);
+		total_cycles = 0;
+		h_cycles -= (*emu_video_scanline_cycles);
 	}
+
+	if(((*emu_video_pos_x) + video_cycles) > (*emu_video_scanline_cycles))
+	{
+		*emu_video_pos_y += (int)(((*emu_video_pos_x) + video_cycles) / (*emu_video_scanline_cycles));
+		*emu_video_pos_x = ((*emu_video_pos_x) + video_cycles) - (*emu_video_scanline_cycles);
+	}
+	else
+		*emu_video_pos_x = (*emu_video_pos_x) + video_cycles;
 
 	ip = emu_cpu_ip();
 	return TRUE;
