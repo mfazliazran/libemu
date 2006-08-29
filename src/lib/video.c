@@ -1,4 +1,5 @@
 #include <string.h>
+#include <gdk/gdk.h>
 #include "libemu.h"
 #include "other.h"
 
@@ -9,6 +10,8 @@ static GtkWidget* video_window;
 static GtkWidget* video_register[MAX_REGISTERS];
 static gint num_registers;
 static gboolean video_loaded = FALSE;
+static GdkColor *color, *current_color;
+static gint number_of_colors;
 
 /*
  * EVENT HANDLERS
@@ -51,6 +54,53 @@ void video_update()
 /*
  * API
  */
+
+/* Create a new color palette */
+void emu_video_create_palette(int n_colors)
+{
+	color = g_malloc(sizeof(GdkColor) * n_colors);
+	number_of_colors = n_colors;
+}
+
+/* Set a color on the color palette */
+void emu_video_palette_set_color(int n_color, int r, int g, int b)
+{
+	if(n_color > number_of_colors)
+		emu_error("Color number higher than number of colors in the palette!");
+	color[n_color].red   = r * 256;
+	color[n_color].green = g * 256;
+	color[n_color].blue  = b * 256;
+}
+
+/* Draws one pixel in the screen */
+void emu_video_draw_pixel(int x, int y, long palette_color)
+{
+	if(&color[palette_color] != current_color)
+	{
+		gdk_gc_set_rgb_fg_color(gc, &color[palette_color]);
+		current_color = &color[palette_color];
+	}
+	gdk_draw_point(GDK_DRAWABLE(buffer), gc, x, y);
+}
+
+/* Draw a horizontal line on the screen */
+void emu_video_draw_hline(int x1, int x2, int y, long palette_color)
+{
+	if(&color[palette_color] != current_color)
+	{
+		gdk_gc_set_rgb_fg_color(gc, &color[palette_color]);
+		current_color = &color[palette_color];
+	}
+	gdk_draw_line(GDK_DRAWABLE(buffer), gc, x1, y, x2, y);
+}
+
+/* Updates the TV screen */
+void emu_video_update_screen()
+{
+	gdk_draw_drawable(screen->window, 
+			screen->style->fg_gc[GTK_WIDGET_STATE(screen)],
+			buffer, 0, 0, 0, 0, -1, -1);
+}
 
 /* Create a new video device, and return its number */
 int emu_video_init(char* filename, double video_cycles_per_cpu_cycle)
@@ -132,6 +182,9 @@ int emu_video_init(char* filename, double video_cycles_per_cpu_cycle)
 	/* Connect callbacks */
 	if(!connect_callbacks(video_mod))
 		g_error("Video callbacks couldn't be connected in %s", path);
+	if(!connect_video_callbacks(video_mod))
+		g_error("Video specific callbacks couldn't be connected in %s", path);
+
 
 	g_message("Video %s loaded from %s", emu_video_name, path);
 	

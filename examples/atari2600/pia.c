@@ -54,7 +54,7 @@ EXPORT void dev_generic_reset()
  * executed, and it'll be 0 if dev_generic_sync_type is VERTICAL_SYNC. */
 EXPORT void dev_generic_step(int cycles)
 {
-	dev_message("pia step");
+	
 }
 
 /* You must implement this function.
