@@ -26,6 +26,30 @@ int connect_callbacks(GModule* mod)
 	return 1;
 }
 
+int connect_video_callbacks(GModule* mod)
+{
+	void (*set_video_callbacks)(
+		void (*dev_video_update_screen_ptr)(),
+		void (*dev_video_create_palette_ptr)(int),
+		void (*dev_video_palette_set_color_ptr)(int, int, int, int),
+		void (*dev_video_draw_pixel_ptr)(int, int, long),
+		void (*dev_video_draw_hline_ptr)(int, int, int, long)
+	);
+
+	if(!g_module_symbol(mod, "set_video_callbacks", (void*)&set_video_callbacks))
+		return 0;
+
+	set_video_callbacks(
+				(void*)&emu_video_update_screen,
+				(void*)&emu_video_create_palette,
+				(void*)&emu_video_palette_set_color,
+				(void*)&emu_video_draw_pixel,
+				(void*)&emu_video_draw_hline
+			   );
+
+	return 1;
+}
+
 GtkWidget* button_with_stock_image(gchar* mnemonic, gchar* stock)
 {
 	GtkWidget *button, *alignment, *hbox, *label, *image;

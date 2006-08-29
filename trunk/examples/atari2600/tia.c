@@ -60,7 +60,9 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data)
  * executed, and it'll be 0 if dev_video_sync_type is VERTICAL_SYNC. */
 EXPORT void dev_video_step(int cycles)
 {
-	dev_message("video step");
+	dev_message("step");
+	dev_video_draw_pixel(10, 10, 0);
+	dev_video_update_screen();
 }
 
 /* The following functions (inside the DEBUG directive) are used only by the

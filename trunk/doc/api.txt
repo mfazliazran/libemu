@@ -43,9 +43,29 @@ libemu API
 +---+-------------------------------+-------------------------------+
 |   | emu_rom_load                  |                               |
 +---+-------------------------------+-------------------------------+
+| VIDEO                                                             |
++---+-------------------------------+-------------------------------+
+|   | emu_video_init                |                               |
+|   | emu_video_update_screen       | dev_video_update_screen       |
+| X | emu_video_pixels_x            | dev_video_pixels_x            |
+| X | emu_video_pixels_y            | dev_video_pixels_y            |
+| X | emu_video_scanline_cycles     | dev_video_scanline_cycles     |
+| X | emu_video_scanlines_vblank    | dev_video_scanlines_vblank    |
+| X | emu_video_scanlines_overscan  | dev_video_scanlines_overscan  |
+| X | emu_video_pos_x               | dev_video_pos_x               |
+| X | emu_video_pos_y               | dev_video_pos_y               |
+| X | emu_video_sync_type           | dev_video_sync_type           |
+| X | emu_video_name[]              | dev_video_name                |
+| X | emu_video_reset[]             | dev_video_reset               |
+| X | emu_video_memory_set[]        | dev_video_memory_set          |
+| X | emu_video_name[]              | dev_video_name                |
+| X | emu_video_debug_name[]        | dev_video_debug_name          |
+| X | emu_video_debug[]             | dev_video_debug               |
++---+-------------------------------+-------------------------------+
 | GENERIC                                                           |
 +---+-------------------------------+-------------------------------+
 |   | emu_generic_init              |                               |
+| X | emu_generic_sync_type         | dev_generic_sync_type         |
 | X | emu_generic_name[]            | dev_generic_name              |
 | X | emu_generic_reset[]           | dev_generic_reset             |
 | X | emu_generic_memory_set[]      | dev_generic_memory_set        |

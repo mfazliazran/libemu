@@ -2,6 +2,7 @@
 #define _OTHER_H_
 
 #include <gtk/gtk.h>
+#include <gdk/gdk.h>
 #include "libemu.h"
 
 typedef enum {
@@ -27,6 +28,9 @@ SYNC_TYPE emu_generic_sync[MAX_GENERIC];
 double emu_generic_cycles[MAX_GENERIC];
 SYNC_TYPE emu_video_sync;
 double emu_video_cycles;
+
+GdkPixmap *buffer;
+GdkGC *gc;
 
 /* other functions */
 void generic_update();
