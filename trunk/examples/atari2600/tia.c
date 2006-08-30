@@ -39,6 +39,12 @@ EXPORT int dev_video_scanlines_overscan = 30;
 char tmp[1000];
 
 /*
+ * LOCAL VARIABLES
+ */
+static int m0_pos = 80;
+static int m0_size = 1;
+
+/*
  * AUXILIARY FUNCTIONS
  */
 
@@ -92,7 +98,12 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data)
  * executed, and it'll be 0 if dev_video_sync_type is VERTICAL_SYNC. */
 EXPORT void dev_video_step(int cycles)
 {
-	
+	/* draw background */
+	dev_video_draw_hline(0, 159, y(), dev_mem_get(COLUBK));
+
+	/* draw missile */
+	if(dev_mem_get(ENAM0) & 0x2)
+		dev_video_draw_hline(m0_pos, m0_pos+m0_size, y(), dev_mem_get(COLUP0));
 }
 
 /* The following functions (inside the DEBUG directive) are used only by the

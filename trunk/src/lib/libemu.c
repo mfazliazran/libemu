@@ -56,8 +56,6 @@ void emu_main()
 	buffer = gdk_pixmap_new(screen->window, *emu_video_pixels_x, *emu_video_pixels_y, -1);
 	gtk_widget_set_size_request(screen, *emu_video_pixels_x, *emu_video_pixels_y);
 	gc = gdk_gc_new(GDK_DRAWABLE(buffer));
-	gdk_draw_rectangle(buffer, screen->style->black_gc, TRUE, 0, 0,
-			*emu_video_pixels_x, *emu_video_pixels_y);
 
 	gtk_main();
 }

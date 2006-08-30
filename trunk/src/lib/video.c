@@ -108,9 +108,16 @@ void emu_video_draw_hline(int x1, int x2, int y, long palette_color)
 /* Updates the TV screen */
 void emu_video_update_screen()
 {
+	GdkRectangle rect;
+	rect.x = 0;
+	rect.y = 0;
+	rect.width = *emu_video_pixels_x;
+	rect.height = *emu_video_pixels_y;
 	gdk_draw_drawable(screen->window, 
 			screen->style->fg_gc[GTK_WIDGET_STATE(screen)],
 			buffer, 0, 0, 0, 0, -1, -1);
+	gdk_window_invalidate_rect(screen->window, &rect, FALSE);
+	gdk_window_process_updates(screen->window, FALSE);
 }
 
 /* Create a new video device, and return its number */
@@ -245,7 +252,7 @@ int emu_video_init(char* filename, double video_cycles_per_cpu_cycle)
 	}
 	num_registers = i;
 
-	g_signal_connect(screen, "expose-event", G_CALLBACK(screen_expose), NULL);
+	g_signal_connect(screen, "expose_event", G_CALLBACK(screen_expose), NULL);
 
 	emu_video_reset();
 
