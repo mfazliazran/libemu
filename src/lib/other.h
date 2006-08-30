@@ -29,8 +29,8 @@ double emu_generic_cycles[MAX_GENERIC];
 SYNC_TYPE emu_video_sync;
 double emu_video_cycles;
 
-GdkPixmap *buffer;
 GdkGC *gc;
+GdkPixmap* buffer;
 
 /* other functions */
 void generic_update();
