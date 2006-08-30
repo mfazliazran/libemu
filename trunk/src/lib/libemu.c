@@ -2,6 +2,17 @@
 #include "libemu.h"
 #include "other.h"
 
+/* Updates the sceen when the application in exposed */
+static void screen_expose(GtkWidget *widget, GdkEventExpose *event, gpointer userdata)
+{
+	gdk_draw_drawable(screen->window, 
+		screen->style->fg_gc[GTK_WIDGET_STATE(screen)],
+		buffer, 
+		event->area.x, event->area.y,
+		event->area.x, event->area.y,
+		event->area.width, event->area.height);
+}
+
 void emu_init(const char* name, int argc, char** argv)
 {
 	GtkWidget *vbox; 
@@ -42,6 +53,7 @@ void emu_init(const char* name, int argc, char** argv)
 	/* Screen */
 	screen = gtk_drawing_area_new();
 	gtk_box_pack_start(GTK_BOX(vbox), screen, TRUE, TRUE, 0);
+	g_signal_connect(screen, "expose-event", G_CALLBACK(screen_expose), NULL);
 	
 	/* Status Bar */
 	statusbar = gtk_statusbar_new();
@@ -56,6 +68,12 @@ void emu_main()
 	buffer = gdk_pixmap_new(screen->window, *emu_video_pixels_x, *emu_video_pixels_y, -1);
 	gtk_widget_set_size_request(screen, *emu_video_pixels_x, *emu_video_pixels_y);
 	gc = gdk_gc_new(GDK_DRAWABLE(buffer));
+	gdk_draw_rectangle(buffer,
+  			screen->style->white_gc,
+  			TRUE,
+  			0, 0,
+  			*emu_video_pixels_x,
+  			*emu_video_pixels_y);
 
 	gtk_main();
 }
