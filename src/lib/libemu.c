@@ -2,6 +2,11 @@
 #include "libemu.h"
 #include "other.h"
 
+static void screen_expose(GtkWidget *widget, GdkEventExpose *event, gpointer userdata)
+{
+	emu_video_update_screen();
+}
+
 void emu_init(int argc, char** argv)
 {
 	GtkWidget *vbox; 
@@ -40,6 +45,8 @@ void emu_init(int argc, char** argv)
 	/* Screen */
 	screen = gtk_drawing_area_new();
 	gtk_box_pack_start(GTK_BOX(vbox), screen, TRUE, TRUE, 12);
+	g_signal_connect(screen, "expose-event", G_CALLBACK(screen_expose), NULL);
+	
 	
 	/* Status Bar */
 	statusbar = gtk_statusbar_new();
