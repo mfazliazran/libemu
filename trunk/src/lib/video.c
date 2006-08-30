@@ -38,6 +38,17 @@ static gboolean video_hide(GtkWidget *widget, GdkEvent *event, gpointer data)
 	return TRUE;
 }
 
+/* Updates the sceen when the application in exposed */
+static void screen_expose(GtkWidget *widget, GdkEventExpose *event, gpointer userdata)
+{
+	gdk_draw_drawable(screen->window, 
+		screen->style->fg_gc[GTK_WIDGET_STATE(screen)],
+		buffer, 
+		event->area.x, event->area.y,
+		event->area.x, event->area.y,
+		event->area.width, event->area.height);
+}
+
 /*
  * PUBLIC FUNCTIONS
  */
@@ -163,6 +174,11 @@ int emu_video_init(char* filename, double video_cycles_per_cpu_cycle)
 	if(!g_module_symbol(video_mod, "dev_video_pos_y", (gpointer*)&emu_video_pos_y))
 		g_error("variable dev_video_pos_y is not defined");
 	*emu_video_pos_x = *emu_video_pos_y = 0;
+	if(!g_module_symbol(video_mod, "dev_video_wait_vsync", (gpointer*)&emu_video_wait_vsync))
+		g_error("variable dev_video_wait_vsync is not defined");
+	if(!g_module_symbol(video_mod, "dev_video_wait_hsync", (gpointer*)&emu_video_wait_hsync))
+		g_error("variable dev_video_wait_hsync is not defined");
+	*emu_video_wait_vsync = *emu_video_wait_hsync = 0;
 
 	if(!g_module_symbol(video_mod, "dev_video_pixels_x", (gpointer*)&emu_video_pixels_x))
 		g_error("variable dev_video_pixels_x is not defined");
@@ -228,6 +244,10 @@ int emu_video_init(char* filename, double video_cycles_per_cpu_cycle)
 		i++;
 	}
 	num_registers = i;
+
+	g_signal_connect(screen, "expose-event", G_CALLBACK(screen_expose), NULL);
+
+	emu_video_reset();
 
 	gtk_container_add(GTK_CONTAINER(video_window), table);
 	gtk_widget_show_all(table);

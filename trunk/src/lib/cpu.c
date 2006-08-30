@@ -20,7 +20,7 @@ static GtkListStore *store;
 static long int ip, previous_ip;
 static GSList* breakpoints;
 static gchar* previous_reference;
-glong h_cycles = 0, total_cycles = 0;
+glong h_cycles = 0, v_cycles = 0, total_cycles = 0;
 
 /* Prototypes */
 static void cpu_run_pause_clicked(GtkButton* cpu_run_pause, gpointer data);
@@ -137,7 +137,7 @@ static inline void execute_generic_step_horizontal(int num_cycles)
 /* Execute one step */
 static inline gboolean execute_one_step()
 {
-	int num_cycles, i, video_cycles;
+	int num_cycles, i, video_cycles, pre_y;
 
 	if(!emu_cpu_step(&num_cycles))
 	{
@@ -164,13 +164,36 @@ static inline gboolean execute_one_step()
 		h_cycles -= (*emu_video_scanline_cycles);
 	}
 
-	if(((*emu_video_pos_x) + video_cycles) > (*emu_video_scanline_cycles))
+	if(((*emu_video_pos_x) + video_cycles) > (*emu_video_scanline_cycles)
+	|| (*emu_video_wait_hsync != 0) || (*emu_video_wait_vsync != 0))
 	{
+		int pre = *emu_video_pos_y;
 		*emu_video_pos_y += (int)(((*emu_video_pos_x) + video_cycles) / (*emu_video_scanline_cycles));
 		*emu_video_pos_x = ((*emu_video_pos_x) + video_cycles) - (*emu_video_scanline_cycles);
+		if(*emu_video_wait_hsync != 0)
+		{
+			*emu_video_pos_x = 0;
+			*emu_video_pos_y = *emu_video_pos_y + 1;
+			*emu_video_wait_hsync = 0;
+		}
+		if(*emu_video_wait_vsync != 0)
+		{
+			if(*emu_video_pos_y > *emu_video_scanlines_vblank
+			&& *emu_video_pos_y <= *emu_video_scanlines_vblank + *emu_video_pixels_y)
+				emu_video_update_screen();
+			*emu_video_pos_x = 0;
+			*emu_video_pos_y = 0;
+			*emu_video_wait_vsync = 0;
+		}
+		if (pre < (*emu_video_scanlines_vblank + *emu_video_pixels_y)
+		&& *emu_video_pos_y >= (*emu_video_scanlines_vblank + *emu_video_pixels_y))
+			emu_video_update_screen();
+		if(*emu_video_pos_y >= (*emu_video_scanlines_vblank + *emu_video_pixels_y + *emu_video_scanlines_overscan))
+			*emu_video_pos_y = *emu_video_pos_y - (*emu_video_scanlines_vblank + *emu_video_pixels_y + *emu_video_scanlines_overscan);
 	}
 	else
 		*emu_video_pos_x = (*emu_video_pos_x) + video_cycles;
+
 
 	ip = emu_cpu_ip();
 	return TRUE;

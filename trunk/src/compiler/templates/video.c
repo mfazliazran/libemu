@@ -10,15 +10,12 @@
 EXPORT char dev_type[] = "video";
 
 /* Fill in the name of the device */
-EXPORT char dev_video_name[] = "";
+EXPORT char dev_video_name[] = "TIA1A";
 
-/* These two variables set the number of horizontal and vertical pixels. */
-EXPORT int dev_video_pixels_x = 0;
-EXPORT int dev_video_pixels_y  = 0;
-
-/* Change this variable to -1 to update the video image to the user. The
- * variable will be automaticly set to 0. */
-EXPORT int dev_video_draw_frame = 0;
+/* These two variables set the number of horizontal and vertical pixels of
+ * this video card. */
+EXPORT int dev_video_pixels_x = 160;
+EXPORT int dev_video_pixels_y = 192;
 
 /* This variable sets the type of synchronization this device will have with
  * the rest of the computer. A setting of EXACT_SYNC means that dev_video_step
@@ -26,18 +23,22 @@ EXPORT int dev_video_draw_frame = 0;
  * dev_video_step will be execute every time a line scanline is completed on
  * the display. A setting of VERTICAL_SYNC means that dev_video step will only
  * be after a new frame is displayed. */
-EXPORT SYNC_TYPE dev_video_sync_type = VERTICAL_SYNC;
+EXPORT SYNC_TYPE dev_video_sync_type = HORIZONTAL_SYNC;
 
-/* This variable sets the number of cycles spent to draw a scanline. It only
- * needs to be set if dev_video_sync_type is EXACT_SYNC or HORIZONTAL_SYNC. */
-EXPORT int dev_video_scanline_cycles = 0;
+/* The number of video cycles it takes to the device to draw a whole scanline
+ * in the screen */
+EXPORT int dev_video_scanline_cycles = 228;
 
-/* These two variables set how many scanlines are drawn before, during and after
- * the frame is drawn on the screen, respectively. These need to be set if
- * dev_video_sync_type is EXACT_SYNC or HORIZONTAL_SYNC. */
-EXPORT int dev_video_vblank_scanlines   = 0;
-EXPORT int dev_video_picture_scanlines  = 0;
-EXPORT int dev_video_overscan_scanlines = 0;
+/* The VBLANK is the number of scanlines before the image begins to be drawn
+ * (this includes the VSYNC time too) and OVERSCAN is the number of scanlines
+ * after the picture is drawn on the screen */
+EXPORT int dev_video_scanlines_vblank = 40;
+EXPORT int dev_video_scanlines_overscan = 30;
+
+/* This variable has the current place of the electorn. It'll be set by the
+ * library automaticly, but can also be set by the video card */
+EXPORT int dev_video_pos_x;
+EXPORT int dev_video_pos_y;
 
 char tmp[1000];
 
@@ -88,10 +89,8 @@ EXPORT char* dev_video_debug_name(int n)
 {
 	switch(n)
 	{
-		/*
 		case 0:	return "X";
 		case 1: return "Y";
-		*/
 		default: return NULL;
 	}
 }
@@ -106,14 +105,12 @@ EXPORT char* dev_video_debug(int n)
 {
 	switch(n)
 	{
-		/*
 		case 0:
-			sprintf(info, "%d", X);
+			sprintf(info, "%d", dev_video_pos_x);
 			break;
 		case 1:
-			sprintf(info, "%d", Y);
+			sprintf(info, "%d", dev_video_pos_y);
 			break;
-		*/
 		default:
 			return NULL;
 	}

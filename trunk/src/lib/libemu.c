@@ -2,12 +2,7 @@
 #include "libemu.h"
 #include "other.h"
 
-static void screen_expose(GtkWidget *widget, GdkEventExpose *event, gpointer userdata)
-{
-	emu_video_update_screen();
-}
-
-void emu_init(int argc, char** argv)
+void emu_init(const char* name, int argc, char** argv)
 {
 	GtkWidget *vbox; 
 	GtkWidget *machine_menu, *machine_item, *run_item, *debug_item;
@@ -19,9 +14,11 @@ void emu_init(int argc, char** argv)
 	
 	/* Main window */
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	gtk_window_set_title(GTK_WINDOW(window), name);
+	gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
 	g_signal_connect(G_OBJECT(window), "delete_event",
 			 G_CALLBACK(gtk_main_quit), NULL);
-	vbox = gtk_vbox_new(FALSE, 6);
+	vbox = gtk_vbox_new(FALSE, 0);
 	gtk_container_add(GTK_CONTAINER(window), vbox);
 
 	/* Menu */
@@ -44,9 +41,7 @@ void emu_init(int argc, char** argv)
 
 	/* Screen */
 	screen = gtk_drawing_area_new();
-	gtk_box_pack_start(GTK_BOX(vbox), screen, TRUE, TRUE, 12);
-	g_signal_connect(screen, "expose-event", G_CALLBACK(screen_expose), NULL);
-	
+	gtk_box_pack_start(GTK_BOX(vbox), screen, TRUE, TRUE, 0);
 	
 	/* Status Bar */
 	statusbar = gtk_statusbar_new();
