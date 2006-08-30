@@ -1,4 +1,4 @@
-EXTRA_DIST = 6502.c tia.c pia.c
+EXTRA_DIST = 6502.c tia.c tia.h pia.c
 
 AM_CPPFLAGS = -I../../src/lib `pkg-config --cflags gtk+-2.0`
 
