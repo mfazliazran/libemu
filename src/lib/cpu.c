@@ -118,17 +118,21 @@ static void update_debugger(gboolean find_ip)
 		emu_cpu_set_debugger_reference(ip);
 }
 
-static inline void execute_generic_step_exact(int num_cycles)
+static inline void execute_devices_step_exact(int num_cycles)
 {
 	int i;
+	if(emu_video_sync == EXACT_SYNC)
+		emu_video_step(emu_video_cycles * num_cycles);
 	for(i=1; i<generic_count; i++)
 		if(emu_generic_sync[i] == EXACT_SYNC)
 			emu_generic_step[i](num_cycles * emu_generic_cycles[i]);
 }
 
-static inline void execute_generic_step_horizontal(int num_cycles)
+static inline void execute_devices_step_horizontal(int num_cycles)
 {
 	int i;
+	if(emu_video_sync == HORIZONTAL_SYNC)
+		emu_video_step(emu_video_cycles * num_cycles);
 	for(i=1; i<generic_count; i++)
 		if(emu_generic_sync[i] == HORIZONTAL_SYNC)
 			emu_generic_step[i](num_cycles * emu_generic_cycles[i]);
@@ -148,52 +152,98 @@ static inline gboolean execute_one_step()
 		return FALSE;
 	}
 
-	video_cycles = emu_video_cycles * num_cycles;
-	if(emu_video_sync == EXACT_SYNC)
-		emu_video_step(video_cycles);
-	execute_generic_step_exact(num_cycles);
+	execute_devices_step_exact(num_cycles);
+	pre_y = *emu_video_pos_y;
+	h_cycles += num_cycles;
 
-	h_cycles += video_cycles;
-	total_cycles += num_cycles;
-	if(h_cycles > (*emu_video_scanline_cycles))
+	if(*emu_video_wait_vsync != 0)
 	{
-		if(emu_video_sync == HORIZONTAL_SYNC)
-			emu_video_step(h_cycles);
-		execute_generic_step_horizontal(total_cycles);
-		total_cycles = 0;
-		h_cycles -= (*emu_video_scanline_cycles);
+		if(*emu_video_pos_y > *emu_video_scanlines_vblank
+		&& *emu_video_pos_y <= *emu_video_scanlines_vblank + *emu_video_pixels_y)
+			emu_video_update_screen();
+		*emu_video_pos_x = 0;
+		*emu_video_pos_y = 0;
+		*emu_video_wait_vsync = 0;		
 	}
-
-	if(((*emu_video_pos_x) + video_cycles) > (*emu_video_scanline_cycles)
-	|| (*emu_video_wait_hsync != 0) || (*emu_video_wait_vsync != 0))
+	else
 	{
-		int pre = *emu_video_pos_y;
-		*emu_video_pos_y += (int)(((*emu_video_pos_x) + video_cycles) / (*emu_video_scanline_cycles));
-		*emu_video_pos_x = ((*emu_video_pos_x) + video_cycles) - (*emu_video_scanline_cycles);
-		if(*emu_video_wait_hsync != 0)
+		if (*emu_video_wait_hsync != 0)
 		{
+			execute_devices_step_horizontal(h_cycles);
+			h_cycles = 0;
 			*emu_video_pos_x = 0;
 			*emu_video_pos_y = *emu_video_pos_y + 1;
 			*emu_video_wait_hsync = 0;
 		}
-		if(*emu_video_wait_vsync != 0)
+		else
 		{
-			if(*emu_video_pos_y > *emu_video_scanlines_vblank
-			&& *emu_video_pos_y <= *emu_video_scanlines_vblank + *emu_video_pixels_y)
-				emu_video_update_screen();
-			*emu_video_pos_x = 0;
-			*emu_video_pos_y = 0;
-			*emu_video_wait_vsync = 0;
+			*emu_video_pos_x = *emu_video_pos_x + (num_cycles * emu_video_cycles);
+			/* check for hsync */
+			while(*emu_video_pos_x > *emu_video_scanline_cycles)
+			{
+				execute_devices_step_horizontal(h_cycles);
+				h_cycles = 0;
+				*emu_video_pos_y = *emu_video_pos_y + 1;
+				*emu_video_pos_x = *emu_video_pos_x - *emu_video_scanline_cycles;
+			}
 		}
-		if (pre < (*emu_video_scanlines_vblank + *emu_video_pixels_y)
-		&& *emu_video_pos_y >= (*emu_video_scanlines_vblank + *emu_video_pixels_y))
+	}
+
+	/* adjust Y position */
+	if(pre_y < (*emu_video_scanlines_vblank + *emu_video_pixels_y)
+	&& *emu_video_pos_y > (*emu_video_scanlines_vblank + *emu_video_pixels_y))
+		emu_video_update_screen();
+	if(*emu_video_pos_y > (*emu_video_scanlines_vblank + *emu_video_pixels_y + *emu_video_scanlines_overscan))
+		*emu_video_pos_y = 0;
+
+	/*
+	video_cycles = emu_video_cycles * num_cycles;
+	execute_devices_step_exact(num_cycles);
+
+	if(*emu_video_wait_hsync != 0)
+	{
+		*emu_video_pos_x = 0;
+		*emu_video_pos_y = *emu_video_pos_y + 1;
+		*emu_video_wait_hsync = 0;
+		if(emu_video_sync == HORIZONTAL_SYNC)
+			emu_video_step(h_cycles);
+		execute_generic_step_horizontal(total_cycles);
+		total_cycles = 0;
+		h_cycles = 0;
+	}
+	else if(*emu_video_wait_vsync != 0)
+	{
+		if(*emu_video_pos_y > *emu_video_scanlines_vblank
+		&& *emu_video_pos_y <= *emu_video_scanlines_vblank + *emu_video_pixels_y)
 			emu_video_update_screen();
-		if(*emu_video_pos_y >= (*emu_video_scanlines_vblank + *emu_video_pixels_y + *emu_video_scanlines_overscan))
-			*emu_video_pos_y = *emu_video_pos_y - (*emu_video_scanlines_vblank + *emu_video_pixels_y + *emu_video_scanlines_overscan);
+		*emu_video_pos_x = 0;
+		*emu_video_pos_y = 0;
+		*emu_video_wait_vsync = 0;
+	}
+	
+	h_cycles += video_cycles;
+	total_cycles += num_cycles;
+	if(h_cycles > (*emu_video_scanline_cycles))
+	{
+		execute_devices_step_horizontal(total_cycles);
+		total_cycles = 0;
+		h_cycles -= (*emu_video_scanline_cycles);
+	}
+
+	if(((*emu_video_pos_x) + video_cycles) > (*emu_video_scanline_cycles))
+	{
+		int pre = *emu_video_pos_y;
+		*emu_video_pos_y += (int)(((*emu_video_pos_x) + video_cycles) / (*emu_video_scanline_cycles));
+		*emu_video_pos_x = ((*emu_video_pos_x) + video_cycles) - (*emu_video_scanline_cycles);
+		if (pre < (*emu_video_scanlines_vblank + *emu_video_pixels_y)
+		&& *emu_video_pos_y > (*emu_video_scanlines_vblank + *emu_video_pixels_y))
+			emu_video_update_screen();
+		if(*emu_video_pos_y > (*emu_video_scanlines_vblank + *emu_video_pixels_y + *emu_video_scanlines_overscan))
+			*emu_video_pos_y = *emu_video_pos_y - (*emu_video_scanlines_vblank + *emu_video_pixels_y + *emu_video_scanlines_overscan) - 1;
 	}
 	else
 		*emu_video_pos_x = (*emu_video_pos_x) + video_cycles;
-
+	*/
 
 	ip = emu_cpu_ip();
 	return TRUE;
