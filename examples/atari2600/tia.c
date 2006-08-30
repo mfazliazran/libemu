@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "libdev.h"
+#include "tia.h"
 
 EXPORT char dev_type[] = "video";
 
@@ -25,21 +26,42 @@ EXPORT int dev_video_pixels_y = 192;
  * be after a new frame is displayed. */
 EXPORT SYNC_TYPE dev_video_sync_type = HORIZONTAL_SYNC;
 
+/* The number of video cycles it takes to the device to draw a whole scanline
+ * in the screen */
 EXPORT int dev_video_scanline_cycles = 228;
+
+/* The VBLANK is the number of scanlines before the image begins to be drawn
+ * (this includes the VSYNC time too) and OVERSCAN is the number of scanlines
+ * after the picture is drawn on the screen */
 EXPORT int dev_video_scanlines_vblank = 40;
 EXPORT int dev_video_scanlines_overscan = 30;
 
-EXPORT int dev_video_pos_x;
-EXPORT int dev_video_pos_y;
-
 char tmp[1000];
+
+/*
+ * AUXILIARY FUNCTIONS
+ */
+
+static inline int x() { return dev_video_pos_x - 68; }
+static inline int y() { return dev_video_pos_y - 40; }
+
+/*
+ * STANDARD FUNCTIONS
+ */
 
 /* You must implement this function.
  *
  * This function initializes the device. */
 EXPORT void dev_video_reset()
 {
+	int i;
 
+	dev_video_create_palette(256);
+	for(i=0; i<256; i++)
+		dev_video_palette_set_color(i, 
+				colortable[i] & 0xff,
+				(colortable[i] / 0x100) & 0xff,
+				(colortable[i] / 0x10000) & 0xff);				
 }
 
 /* You must implement this function.
@@ -52,6 +74,16 @@ EXPORT void dev_video_reset()
  *   if -1 is returned, the memory will be updated. */
 EXPORT int dev_video_memory_set(long pos, unsigned char data)
 {
+	switch(pos)
+	{
+		case VSYNC:
+			if(data & 0x2)
+				dev_video_wait_vsync = -1;
+			break;
+		case WSYNC:
+			dev_video_wait_hsync = -1;
+			break;
+	}
 	return -1;
 }
 
@@ -60,9 +92,7 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data)
  * executed, and it'll be 0 if dev_video_sync_type is VERTICAL_SYNC. */
 EXPORT void dev_video_step(int cycles)
 {
-	dev_message("step");
-	dev_video_draw_pixel(10, 10, 0);
-	dev_video_update_screen();
+	
 }
 
 /* The following functions (inside the DEBUG directive) are used only by the
@@ -100,10 +130,10 @@ EXPORT char* dev_video_debug(int n)
 	switch(n)
 	{
 		case 0:
-			sprintf(info, "%d", dev_video_pos_x);
+			sprintf(info, "%d", x());
 			break;
 		case 1:
-			sprintf(info, "%d", dev_video_pos_y);
+			sprintf(info, "%d", y());
 			break;
 		default:
 			return NULL;

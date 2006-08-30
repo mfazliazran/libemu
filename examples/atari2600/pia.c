@@ -23,7 +23,6 @@
 #define TIM8T  0x295
 #define TIM64T 0x296
 #define T1024T 0x297
-int timer = 0;
 
 EXPORT char dev_type[] = "generic";
 
@@ -41,12 +40,16 @@ EXPORT SYNC_TYPE dev_generic_sync_type = EXACT_SYNC;
 
 char tmp[1000];
 
+int interval, timer, second_pass;
+
 /* You must implement this function.
  *
  * This function initializes the device. */
 EXPORT void dev_generic_reset()
 {
-
+	interval = 0;
+	timer = 0;
+	second_pass = 0;
 }
 
 /* Executes one step. Read the info on dev_generic_sync_type above to understand
@@ -54,7 +57,26 @@ EXPORT void dev_generic_reset()
  * executed, and it'll be 0 if dev_generic_sync_type is VERTICAL_SYNC. */
 EXPORT void dev_generic_step(int cycles)
 {
-	
+	if(interval > 0)
+	{
+		timer -= cycles;
+		if(timer < -interval && !second_pass)
+		{
+			second_pass = 1;
+			interval = 1;
+			timer = 255; /* FIXME */
+		}
+		else if(timer <= 0 && second_pass)
+		{
+			interval = 0;
+			timer = 0;
+			second_pass = 0;
+		}
+		if(interval > 0)
+			dev_mem_set_direct(INTIM, (int)((timer + interval - 1)/interval));
+		else
+			dev_mem_set_direct(INTIM, 0);
+	}
 }
 
 /* You must implement this function.
@@ -67,6 +89,16 @@ EXPORT void dev_generic_step(int cycles)
  *   if -1 is returned, the memory will be updated. */
 EXPORT int dev_generic_memory_set(long pos, unsigned char data)
 {
+	switch(pos)
+	{
+		case TIM64T:
+			interval = 64;
+			timer = data * 64;
+			second_pass = 0;
+			dev_mem_set_direct(INTIM, data);
+			return 0;
+	}
+
 	return -1;
 }
 
@@ -105,6 +137,7 @@ EXPORT char* dev_generic_debug_name(int n)
 		case 14: return "TIM64T";
 		case 15: return "T1024T";
 		case 16: return "Timer";
+		case 17: return "Interval";
 		default: return NULL;
 	}
 }
@@ -136,6 +169,7 @@ EXPORT char* dev_generic_debug(int n)
 		case 14: sprintf(info, "%d", dev_mem_get(TIM64T)); break;
 		case 15: sprintf(info, "%d", dev_mem_get(T1024T)); break;
 		case 16: sprintf(info, "%d", timer);  break;
+		case 17: sprintf(info, "%d", interval);  break;
 		default: return NULL;
 	}
 	return info;

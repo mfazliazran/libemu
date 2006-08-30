@@ -9,7 +9,7 @@
 /* libemu API */
 
 /* General functions */
-void emu_init(int argc, char** argv);
+void emu_init(const char* name, int argc, char** argv);
 void emu_main();
 void emu_message(char* message);
 void emu_error(char* message);
@@ -40,6 +40,8 @@ int *emu_video_scanlines_vblank;
 int *emu_video_scanlines_overscan;
 int *emu_video_pos_x;
 int *emu_video_pos_y;
+int *emu_video_wait_vsync;
+int *emu_video_wait_hsync;
 void emu_video_update_screen();
 void emu_video_create_palette(int n_colors);
 void emu_video_palette_set_color(int n_color, int r, int g, int b);

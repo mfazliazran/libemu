@@ -161,6 +161,8 @@ int emu_generic_init(char* filename, double device_cycles_per_cpu_cycle)
 	}
 	num_registers[generic_count] = i;
 
+	emu_generic_reset[generic_count]();
+
 	gtk_container_add(GTK_CONTAINER(generic_window[generic_count]), table);
 	gtk_widget_show_all(table);
 

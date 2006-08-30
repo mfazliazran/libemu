@@ -4,7 +4,7 @@
 int main(int argc, char** argv)
 {
 	/* Initialize libemu */
-	emu_init(argc, argv);
+	emu_init("Tutorial", argc, argv);
 	
 	/* Initialize components */
 	emu_mem_init_k(4);
