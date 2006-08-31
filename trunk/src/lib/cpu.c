@@ -190,60 +190,11 @@ static inline gboolean execute_one_step()
 	}
 
 	/* adjust Y position */
-	if(pre_y < (*emu_video_scanlines_vblank + *emu_video_pixels_y)
+	if(pre_y <= (*emu_video_scanlines_vblank + *emu_video_pixels_y)
 	&& *emu_video_pos_y > (*emu_video_scanlines_vblank + *emu_video_pixels_y))
 		emu_video_update_screen();
 	if(*emu_video_pos_y > (*emu_video_scanlines_vblank + *emu_video_pixels_y + *emu_video_scanlines_overscan))
 		*emu_video_pos_y = 0;
-
-	/*
-	video_cycles = emu_video_cycles * num_cycles;
-	execute_devices_step_exact(num_cycles);
-
-	if(*emu_video_wait_hsync != 0)
-	{
-		*emu_video_pos_x = 0;
-		*emu_video_pos_y = *emu_video_pos_y + 1;
-		*emu_video_wait_hsync = 0;
-		if(emu_video_sync == HORIZONTAL_SYNC)
-			emu_video_step(h_cycles);
-		execute_generic_step_horizontal(total_cycles);
-		total_cycles = 0;
-		h_cycles = 0;
-	}
-	else if(*emu_video_wait_vsync != 0)
-	{
-		if(*emu_video_pos_y > *emu_video_scanlines_vblank
-		&& *emu_video_pos_y <= *emu_video_scanlines_vblank + *emu_video_pixels_y)
-			emu_video_update_screen();
-		*emu_video_pos_x = 0;
-		*emu_video_pos_y = 0;
-		*emu_video_wait_vsync = 0;
-	}
-	
-	h_cycles += video_cycles;
-	total_cycles += num_cycles;
-	if(h_cycles > (*emu_video_scanline_cycles))
-	{
-		execute_devices_step_horizontal(total_cycles);
-		total_cycles = 0;
-		h_cycles -= (*emu_video_scanline_cycles);
-	}
-
-	if(((*emu_video_pos_x) + video_cycles) > (*emu_video_scanline_cycles))
-	{
-		int pre = *emu_video_pos_y;
-		*emu_video_pos_y += (int)(((*emu_video_pos_x) + video_cycles) / (*emu_video_scanline_cycles));
-		*emu_video_pos_x = ((*emu_video_pos_x) + video_cycles) - (*emu_video_scanline_cycles);
-		if (pre < (*emu_video_scanlines_vblank + *emu_video_pixels_y)
-		&& *emu_video_pos_y > (*emu_video_scanlines_vblank + *emu_video_pixels_y))
-			emu_video_update_screen();
-		if(*emu_video_pos_y > (*emu_video_scanlines_vblank + *emu_video_pixels_y + *emu_video_scanlines_overscan))
-			*emu_video_pos_y = *emu_video_pos_y - (*emu_video_scanlines_vblank + *emu_video_pixels_y + *emu_video_scanlines_overscan) - 1;
-	}
-	else
-		*emu_video_pos_x = (*emu_video_pos_x) + video_cycles;
-	*/
 
 	ip = emu_cpu_ip();
 	return TRUE;
@@ -410,7 +361,7 @@ static void cpu_step_clicked(GtkButton* cpu_step, gpointer data)
 }
 
 /* When the button Run/Pause is clicked */
-static void cpu_run_pause_clicked(GtkButton* cpu_run_pause, gpointer data)
+void cpu_run_pause_clicked(GtkButton* cpu_run_pause, gpointer data)
 {
 	if(!running)
 	{
@@ -420,7 +371,8 @@ static void cpu_run_pause_clicked(GtkButton* cpu_run_pause, gpointer data)
 		gtk_widget_set_sensitive(cpu_vblank, FALSE);
 		gtk_widget_set_sensitive(cpu_reference, FALSE);
 		running = TRUE;
-		g_idle_add_full(G_PRIORITY_HIGH_IDLE, run, NULL, NULL);
+		g_idle_add_full(G_PRIORITY_HIGH, run, NULL, NULL);
+		//run();
 	}
 	else
 	{
@@ -853,8 +805,6 @@ int emu_cpu_init(char* filename)
 	emu_cpu_set_debugger_reference(0);
 	ip = previous_ip = 0;
 	update_debugger(TRUE);
-
-	// gtk_window_present(GTK_WINDOW(cpu_window));
 
 	cpu_loaded = TRUE;
 

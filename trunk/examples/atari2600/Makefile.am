@@ -1,4 +1,5 @@
 EXTRA_DIST = 6502.c tia.c tia.h pia.c
+DIST_SUBDIRS = rom
 
 AM_CPPFLAGS = -I../../src/lib `pkg-config --cflags gtk+-2.0`
 

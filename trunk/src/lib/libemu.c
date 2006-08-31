@@ -2,20 +2,13 @@
 #include "libemu.h"
 #include "other.h"
 
-/* Updates the sceen when the application in exposed */
-static void screen_expose(GtkWidget *widget, GdkEventExpose *event, gpointer userdata)
+void run_clicked(GtkButton* cpu_run_pause, gpointer data)
 {
-	gdk_draw_drawable(screen->window, 
-		screen->style->fg_gc[GTK_WIDGET_STATE(screen)],
-		buffer, 
-		event->area.x, event->area.y,
-		event->area.x, event->area.y,
-		event->area.width, event->area.height);
+	run();
 }
 
 void emu_init(const char* name, int argc, char** argv)
 {
-	GtkWidget *vbox; 
 	GtkWidget *machine_menu, *machine_item, *run_item, *debug_item;
 	
 	has_cpu = has_video = has_ram = 0;
@@ -29,12 +22,12 @@ void emu_init(const char* name, int argc, char** argv)
 	gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
 	g_signal_connect(G_OBJECT(window), "delete_event",
 			 G_CALLBACK(gtk_main_quit), NULL);
-	vbox = gtk_vbox_new(FALSE, 0);
-	gtk_container_add(GTK_CONTAINER(window), vbox);
+	vbox_main = gtk_vbox_new(FALSE, 0);
+	gtk_container_add(GTK_CONTAINER(window), vbox_main);
 
 	/* Menu */
 	menu = gtk_menu_bar_new();
-	gtk_box_pack_start(GTK_BOX(vbox), menu, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(vbox_main), menu, FALSE, FALSE, 0);
 	
 	machine_menu = gtk_menu_new();
 	machine_item = gtk_menu_item_new_with_label("Machine");
@@ -46,35 +39,15 @@ void emu_init(const char* name, int argc, char** argv)
 	gtk_menu_item_set_submenu(GTK_MENU_ITEM(debug_item), debug_menu);
 	gtk_menu_bar_append(GTK_MENU_BAR(menu), debug_item);
 
-	run_item = gtk_menu_item_new_with_label("Run");
+	run_item = gtk_check_menu_item_new_with_label("Run");
 	gtk_menu_shell_append(GTK_MENU_SHELL(machine_menu), run_item);
-	gtk_widget_set_sensitive(run_item, FALSE);
-
-	/* Screen */
-	screen = gtk_drawing_area_new();
-	gtk_box_pack_start(GTK_BOX(vbox), screen, TRUE, TRUE, 0);
-	g_signal_connect(screen, "expose-event", G_CALLBACK(screen_expose), NULL);
-	
-	/* Status Bar */
-	statusbar = gtk_statusbar_new();
-	gtk_box_pack_start(GTK_BOX(vbox), statusbar, FALSE, FALSE, 0);
+	// gtk_widget_set_sensitive(run_item, FALSE);
+	g_signal_connect(run_item, "toggled", G_CALLBACK(run_clicked), NULL);
 }
 
 void emu_main()
 {
 	gtk_widget_show_all(window);
-
-	/* Create screen */
-	buffer = gdk_pixmap_new(screen->window, *emu_video_pixels_x, *emu_video_pixels_y, -1);
-	gtk_widget_set_size_request(screen, *emu_video_pixels_x, *emu_video_pixels_y);
-	gc = gdk_gc_new(GDK_DRAWABLE(buffer));
-	gdk_draw_rectangle(buffer,
-  			screen->style->white_gc,
-  			TRUE,
-  			0, 0,
-  			*emu_video_pixels_x,
-  			*emu_video_pixels_y);
-
 	gtk_main();
 }
 

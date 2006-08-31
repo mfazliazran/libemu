@@ -2,7 +2,6 @@
 #define _OTHER_H_
 
 #include <gtk/gtk.h>
-#include <gdk/gdk.h>
 #include "libemu.h"
 
 typedef enum {
@@ -15,11 +14,11 @@ int connect_callbacks(GModule* mod);
 GtkWidget* button_with_stock_image(gchar* mnemonic, gchar* stock);
 unsigned long hex2long(char* hex);
 
-GtkWidget* window;
-GtkWidget* menu;
-GtkWidget* debug_menu;
-GtkWidget* screen;
-GtkWidget* statusbar;
+GtkWidget *window;
+GtkWidget *vbox_main;
+GtkWidget *menu;
+GtkWidget *debug_menu;
+GtkWidget *statusbar;
 static gboolean running = FALSE;
 
 int has_cpu, has_video, has_ram, generic_count;
@@ -29,11 +28,9 @@ double emu_generic_cycles[MAX_GENERIC];
 SYNC_TYPE emu_video_sync;
 double emu_video_cycles;
 
-GdkGC *gc;
-GdkPixmap* buffer;
-
 /* other functions */
 void generic_update();
 void video_update();
+gboolean run();
 
 #endif

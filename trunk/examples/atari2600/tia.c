@@ -89,6 +89,19 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data)
 		case WSYNC:
 			dev_video_wait_hsync = -1;
 			break;
+		case HMOVE:
+			{
+				int hmm0 = dev_mem_get(HMM0) >> 4;
+				if(hmm0 >= 1 && hmm0 <= 7)
+					m0_pos -= hmm0;
+				else if(hmm0 >= 8 && hmm0 <= 15)
+					m0_pos += (16 - hmm0);
+				if (m0_pos >= 160)
+					m0_pos = 0;
+				else if (m0_pos < 0)
+					m0_pos = 159;
+			}
+
 	}
 	return -1;
 }
@@ -98,6 +111,9 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data)
  * executed, and it'll be 0 if dev_video_sync_type is VERTICAL_SYNC. */
 EXPORT void dev_video_step(int cycles)
 {
+	if(y() < 0 || y() > dev_video_pixels_y)
+		return;
+
 	/* draw background */
 	dev_video_draw_hline(0, 159, y(), dev_mem_get(COLUBK));
 
