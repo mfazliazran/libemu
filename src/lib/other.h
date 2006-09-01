@@ -27,7 +27,9 @@ GtkWidget *window;
 GtkWidget *internal_hbox, *external_hbox;
 GtkWidget *debug_menu;
 GtkWidget *statusbar;
-static gboolean running = FALSE;
+gboolean running;
+GtkWidget *run_b, *pause;
+guint run_signal, pause_signal;
 
 int has_cpu, has_video, has_ram, generic_count;
 
@@ -39,6 +41,5 @@ double emu_video_cycles;
 /* other functions */
 void generic_update();
 void video_update();
-gboolean run();
 
 #endif

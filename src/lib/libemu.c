@@ -6,13 +6,29 @@
 /*
  * EVENT HANDLERS
  */
-void run_clicked(GtkButton* cpu_run_pause, gpointer data)
+static void run_b_clicked(GtkToggleButton *toggle, gpointer data)
 {
-	run();
+	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(run_b)))
+	{
+		emu_cpu_run();
+	}
+	else
+		gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(run_b), TRUE);
+}
+
+static void pause_clicked(GtkToggleButton *toggle, gpointer data)
+{
+	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(pause)))
+	{
+		emu_cpu_pause();
+	}
+	else
+		gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(pause), TRUE);
 }
 
 static gboolean close_clicked (GtkWidget *widget, GdkEvent *event, gpointer user_data)
 {
+	running = FALSE;
 	SDL_Quit();
 	gtk_main_quit();
 	return FALSE;
@@ -24,12 +40,12 @@ static gboolean close_clicked (GtkWidget *widget, GdkEvent *event, gpointer user
 void emu_init(const char* name, int argc, char** argv)
 {
 	GtkWidget *vbox, *hbox, *controls;
-	GtkWidget *run, *pause, *memory;
 	
 	debug_menu = gtk_menu_new(); // off
 
 	has_cpu = has_video = has_ram = 0;
 	generic_count = 1;
+	running = FALSE;
 	
 	gtk_init(&argc, &argv);
 	
@@ -52,10 +68,12 @@ void emu_init(const char* name, int argc, char** argv)
 	controls = gtk_hbutton_box_new();
 	gtk_button_box_set_layout(GTK_BUTTON_BOX(controls), GTK_BUTTONBOX_START);
 	gtk_box_set_spacing(GTK_BOX(controls), 6);
-	run   = button_with_stock_image("Run", "gtk-media-play", TRUE);
+	run_b = button_with_stock_image("Run", "gtk-media-play", TRUE);
+	run_signal = g_signal_connect(run_b, "toggled", G_CALLBACK(run_b_clicked), NULL);
 	pause = button_with_stock_image("Pause", "gtk-media-pause", TRUE);
+	pause_signal = g_signal_connect(pause, "toggled", G_CALLBACK(pause_clicked), NULL);
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(pause), TRUE);
-	gtk_box_pack_start_defaults(GTK_BOX(controls), run);
+	gtk_box_pack_start_defaults(GTK_BOX(controls), run_b);
 	gtk_box_pack_start_defaults(GTK_BOX(controls), pause);
 	gtk_box_pack_start_defaults(GTK_BOX(vbox), controls);
 
