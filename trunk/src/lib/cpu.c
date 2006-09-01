@@ -247,9 +247,9 @@ gboolean run()
  */
 
 /* When the CPU menu item is clicked on the main window */
-static void cpu_show_hide(GtkCheckMenuItem *item, gpointer data)
+static void cpu_show_hide(GtkToggleButton *item, gpointer data)
 {
-	if(item->active)
+	if(gtk_toggle_button_get_active(item))
 	{
 		gtk_window_present(GTK_WINDOW(cpu_window));
 		emu_cpu_set_debugger_reference(emu_cpu_get_debugger_reference());
@@ -261,7 +261,7 @@ static void cpu_show_hide(GtkCheckMenuItem *item, gpointer data)
 /* When the close button is clicked on the debugger */
 static gboolean cpu_hide(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
-	gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(data), FALSE);
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(data), FALSE);
 	gtk_widget_hide(cpu_window);
 	return TRUE;
 }
@@ -620,8 +620,8 @@ int emu_cpu_init(char* filename)
 	g_message("CPU %s loaded from %s", emu_cpu_name, path);
 	
 	/* Add a new menu option */
-	debug_item = gtk_check_menu_item_new_with_label(g_strdup_printf("%s (cpu)", emu_cpu_name));
-	gtk_menu_shell_append(GTK_MENU_SHELL(debug_menu), debug_item);
+	debug_item = button_with_pixmap_image(emu_cpu_name, P_CPU, TRUE);
+	gtk_box_pack_start_defaults(GTK_BOX(internal_hbox), debug_item);
 	g_signal_connect(debug_item, "toggled", G_CALLBACK(cpu_show_hide), NULL);
 
 	/* Create a new window, hidden */
@@ -668,12 +668,12 @@ int emu_cpu_init(char* filename)
 	g_signal_connect_swapped(cpu_run_pause, "clicked",
 			G_CALLBACK(cpu_run_pause_clicked), NULL);
 	gtk_container_add(GTK_CONTAINER(toolitem[0]), cpu_run_pause);
-	cpu_step = button_with_stock_image("_Step", GTK_STOCK_MEDIA_NEXT);
+	cpu_step = button_with_stock_image("_Step", GTK_STOCK_MEDIA_NEXT, FALSE);
 	gtk_tooltips_set_tip(tips, cpu_step, "Execute one instruction", "");
 	g_signal_connect_swapped(cpu_step, "clicked",
 			G_CALLBACK(cpu_step_clicked), NULL);
 	gtk_container_add(GTK_CONTAINER(toolitem[1]), cpu_step);
-	cpu_vblank = button_with_stock_image("Go to Next _Frame", GTK_STOCK_JUSTIFY_FILL);
+	cpu_vblank = button_with_stock_image("Go to Next _Frame", GTK_STOCK_JUSTIFY_FILL, FALSE);
 	gtk_tooltips_set_tip(tips, cpu_vblank, "Run the microprocessor until it reaches a VBLANK", "");
 	gtk_container_add(GTK_CONTAINER(toolitem[2]), cpu_vblank);
 

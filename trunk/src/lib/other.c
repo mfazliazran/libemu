@@ -1,6 +1,8 @@
+#include <gdk-pixbuf/gdk-pixbuf.h>
 #include <string.h>
 #include "libemu.h"
 #include "other.h"
+#include "../../pixmaps/pixmaps.c"
 
 int connect_callbacks(GModule* mod)
 {
@@ -50,11 +52,14 @@ int connect_video_callbacks(GModule* mod)
 	return 1;
 }
 
-GtkWidget* button_with_stock_image(gchar* mnemonic, gchar* stock)
+GtkWidget* button_with_stock_image(gchar* mnemonic, gchar* stock, gboolean toggle)
 {
 	GtkWidget *button, *alignment, *hbox, *label, *image;
 
-	button = gtk_button_new();
+	if(toggle)
+		button = gtk_toggle_button_new();
+	else
+		button = gtk_button_new();
 	
 	alignment = gtk_alignment_new(0.5, 0.5, 0, 0);
 	gtk_container_add(GTK_CONTAINER(button), alignment);
@@ -63,6 +68,58 @@ GtkWidget* button_with_stock_image(gchar* mnemonic, gchar* stock)
 	gtk_container_add(GTK_CONTAINER(alignment), hbox);
 
 	image = gtk_image_new_from_stock(stock, GTK_ICON_SIZE_SMALL_TOOLBAR);
+	gtk_box_pack_start(GTK_BOX(hbox), image, FALSE, FALSE, 0);
+
+	label = gtk_label_new_with_mnemonic(mnemonic);
+	gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, FALSE, 0);
+
+	gtk_widget_show_all(alignment);
+
+	return button;
+}
+
+GtkWidget* button_with_pixmap_image(gchar* mnemonic, gint image_number, gboolean toggle)
+{
+	GtkWidget *button, *alignment, *hbox, *label, *image;
+	GdkPixbuf *pixbuf;
+
+	if(toggle)
+		button = gtk_toggle_button_new();
+	else
+		button = gtk_button_new();
+	
+	alignment = gtk_alignment_new(0.5, 0.5, 0, 0);
+	gtk_container_add(GTK_CONTAINER(button), alignment);
+
+	hbox = gtk_hbox_new(FALSE, 4);
+	gtk_container_add(GTK_CONTAINER(alignment), hbox);
+
+	// image = gtk_image_new_from_stock(stock, GTK_ICON_SIZE_SMALL_TOOLBAR);
+	switch(image_number)
+	{
+		case P_CPU:
+			pixbuf = gdk_pixbuf_new_from_inline(-1, cpu_pixmap, FALSE, NULL);
+			break;
+		case P_VIDEO:
+			pixbuf = gdk_pixbuf_new_from_inline(-1, video_pixmap, FALSE, NULL);
+			break;
+		case P_DEVICE:
+			pixbuf = gdk_pixbuf_new_from_inline(-1, device_pixmap, FALSE, NULL);
+			break;
+		case P_MEMORY:
+			pixbuf = gdk_pixbuf_new_from_inline(-1, memory_pixmap, FALSE, NULL);
+			break;
+		case P_MONITOR:
+			pixbuf = gdk_pixbuf_new_from_inline(-1, monitor_pixmap, FALSE, NULL);
+			break;
+		case P_JOYSTICK:
+			pixbuf = gdk_pixbuf_new_from_inline(-1, joystick_pixmap, FALSE, NULL);
+			break;
+		default:
+			g_error("Invalid pixmap");
+	}
+	image = gtk_image_new_from_pixbuf(pixbuf);
+
 	gtk_box_pack_start(GTK_BOX(hbox), image, FALSE, FALSE, 0);
 
 	label = gtk_label_new_with_mnemonic(mnemonic);

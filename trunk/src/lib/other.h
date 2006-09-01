@@ -4,6 +4,14 @@
 #include <gtk/gtk.h>
 #include "libemu.h"
 
+/* Pixbuf images */
+#define P_CPU      1
+#define P_VIDEO    2
+#define P_DEVICE   3
+#define P_MONITOR  4
+#define P_JOYSTICK 5
+#define P_MEMORY   6
+
 typedef enum {
 	EXACT_SYNC = 0,
 	HORIZONTAL_SYNC,
@@ -11,12 +19,12 @@ typedef enum {
 } SYNC_TYPE;
 
 int connect_callbacks(GModule* mod);
-GtkWidget* button_with_stock_image(gchar* mnemonic, gchar* stock);
+GtkWidget* button_with_stock_image(gchar* mnemonic, gchar* stock, gboolean toggle);
+GtkWidget* button_with_pixmap_image(gchar* mnemonic, gint image_number, gboolean toggle);
 unsigned long hex2long(char* hex);
 
 GtkWidget *window;
-GtkWidget *vbox_main;
-GtkWidget *menu;
+GtkWidget *internal_hbox, *external_hbox;
 GtkWidget *debug_menu;
 GtkWidget *statusbar;
 static gboolean running = FALSE;

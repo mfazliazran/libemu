@@ -14,10 +14,10 @@ static gint num_registers[MAX_GENERIC];
  */
 
 /* When the CPU menu item is clicked on the main window */
-static void generic_show_hide(GtkCheckMenuItem *item, gpointer data)
+static void generic_show_hide(GtkToggleButton *item, gpointer data)
 {
 	GtkWindow* window = GTK_WINDOW(data);
-	if(item->active)
+	if(gtk_toggle_button_get_active(item))
 	{
 		gtk_window_present(window);
 		generic_update();
@@ -29,7 +29,7 @@ static void generic_show_hide(GtkCheckMenuItem *item, gpointer data)
 /* When the close button is clicked on the debugger */
 static gboolean generic_hide(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
-	gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(data), FALSE);
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(data), FALSE);
 	gtk_widget_hide(widget);
 	return TRUE;
 }
@@ -121,8 +121,8 @@ int emu_generic_init(char* filename, double device_cycles_per_cpu_cycle)
 	g_message("Generic Device %s loaded from %s", emu_generic_name[generic_count], path);
 	
 	/* Add a new menu option */
-	debug_item = gtk_check_menu_item_new_with_label(g_strdup_printf("%s (generic)", emu_generic_name[generic_count]));
-	gtk_menu_shell_append(GTK_MENU_SHELL(debug_menu), debug_item);
+	debug_item = button_with_pixmap_image(emu_generic_name[generic_count], P_DEVICE, TRUE);
+	gtk_box_pack_start_defaults(GTK_BOX(internal_hbox), debug_item);
 
 	/* Create window */
 	generic_window[generic_count] = gtk_window_new(GTK_WINDOW_TOPLEVEL);

@@ -1,10 +1,4 @@
-// #define SDL
-
-#if SDL
-#  include "SDL.h"
-#else
-#  include <gdk/gdk.h>
-#endif
+#include "SDL.h"
 #include <string.h>
 #include "libemu.h"
 #include "other.h"
@@ -16,26 +10,42 @@ static GtkWidget* video_window;
 static GtkWidget* video_register[MAX_REGISTERS];
 static gint num_registers;
 static gboolean video_loaded = FALSE;
-#if SDL
 static SDL_Color *color;
-static SDL_Surface* screen;
-#else
-static GdkColor *color, *current_color;
-static GdkGC *gc;
-static GdkPixmap *buffer;
-static GtkWidget *screen;
-#endif
+static SDL_Surface *screen, *buffer;
 static gint number_of_colors;
+
+/* TODO - check when SDL screen is asked to close */
 
 /*
  * EVENT HANDLERS
  */
 
-/* When the CPU menu item is clicked on the main window */
-static void video_show_hide(GtkCheckMenuItem *item, gpointer data)
+/* When the monitor item is clicked on the main window */
+static void monitor_show_hide(GtkToggleButton *item, gpointer data)
+{
+	// GtkWindow* window = GTK_WINDOW(data);
+	if(gtk_toggle_button_get_active(item))
+	{
+		SDL_InitSubSystem(SDL_INIT_VIDEO);
+		screen = SDL_SetVideoMode(*emu_video_pixels_x, *emu_video_pixels_y, 8,
+				SDL_HWSURFACE | SDL_HWPALETTE | SDL_DOUBLEBUF);
+		if(!screen)
+			g_error("A SDL_Screen could not be created (%s)", SDL_GetError());
+		SDL_WM_SetCaption("Monitor", "Monitor");
+		emu_video_update_screen();
+	}
+	else
+	{
+		SDL_FreeSurface(screen);
+		SDL_QuitSubSystem(SDL_INIT_VIDEO);
+	}
+}
+
+/* When the video menu item is clicked on the main window */
+static void video_show_hide(GtkToggleButton *item, gpointer data)
 {
 	GtkWindow* window = GTK_WINDOW(data);
-	if(item->active)
+	if(gtk_toggle_button_get_active(item))
 	{
 		gtk_window_present(window);
 		video_update();
@@ -47,38 +57,10 @@ static void video_show_hide(GtkCheckMenuItem *item, gpointer data)
 /* When the close button is clicked on the debugger */
 static gboolean video_hide(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
-	gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(data), FALSE);
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(data), FALSE);
 	gtk_widget_hide(widget);
 	return TRUE;
 }
-
-#ifndef SDL
-
-static gboolean screen_configure_event (GtkWidget *widget, GdkEventConfigure *event, gpointer data)
-{
-	buffer = gdk_pixmap_new(screen->window,	*emu_video_pixels_x, *emu_video_pixels_y, -1);
-	gtk_widget_set_size_request(screen, *emu_video_pixels_x, *emu_video_pixels_y);
-	gc = gdk_gc_new(GDK_DRAWABLE(buffer));
-	gdk_draw_rectangle(buffer,
-  			screen->style->black_gc,
-  			TRUE,
-  			0, 0,
-  			*emu_video_pixels_x,
-  			*emu_video_pixels_y);
-	return TRUE;
-}
-
-static gboolean screen_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer data)
-{
-	gdk_draw_drawable(screen->window,
-			screen->style->fg_gc[GTK_WIDGET_STATE(screen)], 
-			buffer, event->area.x, event->area.y,
-			event->area.x, event->area.y,
-			event->area.width, event->area.height);
-	return FALSE;
-}
-
-#endif
 
 /*
  * PUBLIC FUNCTIONS
@@ -100,93 +82,65 @@ void video_update()
 /* Create a new color palette */
 void emu_video_create_palette(int n_colors)
 {
-#ifdef SDL
 	color = g_malloc(sizeof(SDL_Color) * n_colors);
-#else
-	color = g_malloc(sizeof(GdkColor) * n_colors);
-#endif
 	number_of_colors = n_colors;
 }
 
 /* Set a color on the color palette */
 void emu_video_palette_set_color(int n_color, int r, int g, int b)
 {
-#ifdef SDL
+	if(!SDL_WasInit(SDL_INIT_VIDEO))
+		return;
 	SDL_Color *c = g_malloc(sizeof(SDL_Color));
 	if(n_color > number_of_colors)
 		emu_error("Color number higher than number of colors in the palette!");
 	c->r = r;
 	c->g = g;
 	c->b = b;
-	SDL_SetColors(screen, c, n_color, 1);
-#else
-	if(n_color > number_of_colors)
-		emu_error("Color number higher than number of colors in the palette!");
-	color[n_color].red = r * 256;
-	color[n_color].green = g * 256;
-	color[n_color].blue = b * 256;
-#endif
+	SDL_SetColors(buffer, c, n_color, 1);
 }
 
 /* Draws one pixel in the screen */
 void emu_video_draw_pixel(int x, int y, long palette_color)
 {
-#ifdef SDL
 	Uint8 *p;
 
+	if(!SDL_WasInit(SDL_INIT_VIDEO))
+		return;
 	if(y < 0 || y >= *emu_video_pixels_y)
 		return;
 
-	SDL_LockSurface(screen);
-	p = (Uint8*)screen->pixels + y * screen->pitch;
+	SDL_LockSurface(buffer);
+	p = (Uint8*)buffer->pixels + y * buffer->pitch;
 	p[x] = palette_color;
-	SDL_UnlockSurface(screen);
-#else
-	if(&color[palette_color] != current_color)
-	{
-		gdk_gc_set_rgb_fg_color(gc, &color[palette_color]);
-		current_color = &color[palette_color];
-	}
-	gdk_draw_point(GDK_DRAWABLE(buffer), gc, x, y);
-#endif
-
+	SDL_UnlockSurface(buffer);
 }
 
 /* Draw a horizontal line on the screen */
 void emu_video_draw_hline(int x1, int x2, int y, long palette_color)
 {
-#ifdef SDL
 	Uint8 *p;
 	int x;
 
+	if(!SDL_WasInit(SDL_INIT_VIDEO))
+		return;
 	if(y < 0 || y >= *emu_video_pixels_y)
 		return;
 
-	SDL_LockSurface(screen);
-	p = (Uint8*)screen->pixels + y * screen->pitch;
+	SDL_LockSurface(buffer);
+	p = (Uint8*)buffer->pixels + y * buffer->pitch;
 	for(x=x1; x<x2; x++)
 		p[x] = palette_color;
-	SDL_UnlockSurface(screen);
-#else
-	if(&color[palette_color] != current_color)
-	{
-		gdk_gc_set_rgb_fg_color(gc, &color[palette_color]);
-		current_color = &color[palette_color];
-	}
-	gdk_draw_line(GDK_DRAWABLE(buffer), gc, x1, y, x2, y);
-#endif
+	SDL_UnlockSurface(buffer);
 }
 
 /* Updates the TV screen */
 void emu_video_update_screen()
 {
-#ifdef SDL
+	if(!SDL_WasInit(SDL_INIT_VIDEO))
+		return;
+	SDL_BlitSurface(buffer, NULL, screen, NULL);
 	SDL_Flip(screen);
-#else
-	gdk_draw_drawable(screen->window,
-			screen->style->fg_gc[GTK_WIDGET_STATE(screen)], 
-			buffer, 0, 0, 0, 0, *emu_video_pixels_x, *emu_video_pixels_y);
-#endif
 }
 
 /* Create a new video device, and return its number */
@@ -194,13 +148,11 @@ int emu_video_init(char* filename, double video_cycles_per_cpu_cycle)
 {
 	GModule *video_mod;
 	gchar *path, *type;
-	GtkWidget *debug_item;
+	GtkWidget *debug_item, *monitor;
 	GtkWidget *table, *label;
 	gint row, col, i;
 	SYNC_TYPE* sync;
-#ifdef SDL
 	SDL_VideoInfo *info;
-#endif
 
 	if(video_loaded)
 	{
@@ -280,18 +232,20 @@ int emu_video_init(char* filename, double video_cycles_per_cpu_cycle)
 	if(!connect_video_callbacks(video_mod))
 		g_error("Video specific callbacks couldn't be connected in %s", path);
 
-
 	g_message("Video %s loaded from %s", emu_video_name, path);
 	
 	/* Add a new menu option */
-	debug_item = gtk_check_menu_item_new_with_label(g_strdup_printf("%s (video)", emu_video_name));
-	gtk_menu_shell_append(GTK_MENU_SHELL(debug_menu), debug_item);
+	debug_item = button_with_pixmap_image(emu_video_name, P_VIDEO, TRUE);
+	gtk_box_pack_start_defaults(GTK_BOX(internal_hbox), debug_item);
+	monitor = button_with_pixmap_image("Monitor", P_MONITOR, TRUE);
+	gtk_box_pack_start_defaults(GTK_BOX(external_hbox), monitor);
 
 	/* Create window */
 	video_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title(GTK_WINDOW(video_window), emu_video_name);
 	gtk_window_set_destroy_with_parent(GTK_WINDOW(video_window), TRUE);
 	g_signal_connect(debug_item, "toggled", G_CALLBACK(video_show_hide), video_window);
+	g_signal_connect(monitor, "toggled", G_CALLBACK(monitor_show_hide), NULL);
 	g_signal_connect(video_window, "delete_event", G_CALLBACK(video_hide), debug_item);
 
 	/* Create table */
@@ -324,8 +278,6 @@ int emu_video_init(char* filename, double video_cycles_per_cpu_cycle)
 	}
 	num_registers = i;
 
-#ifdef SDL
-
 	/* Initialize video (SDL) */
 	if(SDL_Init(SDL_INIT_VIDEO) == -1)
 		g_error("SDL could not be initialized (%s)", SDL_GetError());
@@ -337,24 +289,8 @@ int emu_video_init(char* filename, double video_cycles_per_cpu_cycle)
 	if(!info->blit_hw)
 		g_warning("Hardware to hardware blits are not accelerated in this video card.");
 
-	screen = SDL_SetVideoMode(*emu_video_pixels_x, *emu_video_pixels_y, 8,
-			SDL_HWSURFACE | SDL_HWPALETTE | SDL_DOUBLEBUF);
-	if(!screen)
-		g_error("A SDL_Screen could not be created (%s)", SDL_GetError());
-
-	SDL_WM_SetCaption("Monitor", "Monitor");
-	// SDL_WM_IconifyWindow();
-
-#else
-
-	screen = gtk_drawing_area_new();
-	gtk_box_pack_start(GTK_BOX(vbox_main), screen, FALSE, FALSE, 0);
-	g_signal_connect(screen, "expose_event",
-			G_CALLBACK (screen_expose_event), NULL);
-	g_signal_connect(screen, "configure_event",
-			G_CALLBACK (screen_configure_event), NULL);
-
-#endif
+	buffer = SDL_CreateRGBSurface(SDL_HWSURFACE, *emu_video_pixels_x,
+			*emu_video_pixels_y, 8, 0, 0, 0, 0);
 
 	emu_video_reset();
 
