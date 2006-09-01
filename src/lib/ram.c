@@ -39,9 +39,9 @@ enum
  */
 
 /* When the RAM menu item is clicked on the main window */
-static void mem_show_hide(GtkCheckMenuItem *item, gpointer data)
+static void mem_show_hide(GtkToggleButton *item, gpointer data)
 {
-	if(item->active)
+	if(gtk_toggle_button_get_active(item))
 	{
 		gtk_window_present(GTK_WINDOW(mem_window));
 		emu_mem_set_reference(emu_mem_get_reference());
@@ -53,7 +53,7 @@ static void mem_show_hide(GtkCheckMenuItem *item, gpointer data)
 /* When the close button is clicked on the memory window */
 static gboolean mem_hide(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
-	gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(data), FALSE);
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(data), FALSE);
 	gtk_widget_hide(mem_window);
 	return TRUE;
 }
@@ -154,7 +154,7 @@ void emu_mem_set_reference(unsigned long initial_pos)
 /* Create the memory */
 void emu_mem_init(unsigned long sz)
 {
-	GtkWidget *debug_item;
+	GtkWidget *memory_button;
 	GtkWidget *vbox, *hbox2, *reference_label, *scroll_debugger;
 	GtkTreeViewColumn *column;
 	GtkCellRenderer *renderer;
@@ -176,16 +176,20 @@ void emu_mem_init(unsigned long sz)
 	size = sz;
 
 	/* Add a new menu option */
+	/*
 	debug_item = gtk_check_menu_item_new_with_label(g_strdup_printf("RAM - %dk", size / 1024));
 	gtk_menu_shell_append(GTK_MENU_SHELL(debug_menu), debug_item);
-	g_signal_connect(debug_item, "toggled", G_CALLBACK(mem_show_hide), NULL);
+	*/
+	memory_button = button_with_pixmap_image(g_strdup_printf("Memory - %dk", size / 1024), P_MEMORY, TRUE);
+	gtk_box_pack_end_defaults(GTK_BOX(internal_hbox), memory_button);
+	g_signal_connect(memory_button, "toggled", G_CALLBACK(mem_show_hide), NULL);
 
 	/* Create a new window, hidden */
 	mem_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title(GTK_WINDOW(mem_window), g_strdup_printf("RAM - %dk", size / 1024));
 	gtk_window_set_default_size(GTK_WINDOW(mem_window), 440, 275);
 	gtk_window_set_destroy_with_parent(GTK_WINDOW(mem_window), TRUE);
-	g_signal_connect(mem_window, "delete_event", G_CALLBACK(mem_hide), debug_item);
+	g_signal_connect(mem_window, "delete_event", G_CALLBACK(mem_hide), memory_button);
 
 	vbox = gtk_vbox_new(FALSE, 6);
 

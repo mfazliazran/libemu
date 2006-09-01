@@ -1,0 +1,1 @@
+gdk-pixbuf-csource.exe --build-list cpu_pixmap cpu.png video_pixmap video.png device_pixmap device.png monitor_pixmap monitor.png joystick_pixmap joystick.png memory_pixmap memory.png > "pixmaps.c"
