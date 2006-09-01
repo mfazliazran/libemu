@@ -16,6 +16,7 @@ void emu_error(char* message);
 
 /* CPU functions */
 int emu_cpu_init(char* filename);
+void emu_cpu_run();
 void emu_cpu_set_breakpoint(unsigned long int pos, int one_time_only);
 void emu_cpu_unset_breakpoint(unsigned long int pos);
 unsigned long emu_cpu_get_debugger_reference();
@@ -31,7 +32,7 @@ unsigned long int (*emu_cpu_ip)();
 int (*emu_cpu_step)(int* cycles);
 
 /* Video functions */
-int emu_video_init(char* filename, double video_cycles_per_cpu_cycle);
+int emu_video_init(char* filename, double video_cycles_per_cpu_cycle, int frames_per_second);
 char* emu_video_name;
 int *emu_video_pixels_x;
 int *emu_video_pixels_y;

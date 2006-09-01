@@ -13,6 +13,8 @@ static gboolean video_loaded = FALSE;
 static SDL_Color *color;
 static SDL_Surface *screen, *buffer;
 static gint number_of_colors;
+static gdouble fps;
+static GTimer *timer;
 
 /* TODO - check when SDL screen is asked to close */
 
@@ -139,12 +141,19 @@ void emu_video_update_screen()
 {
 	if(!SDL_WasInit(SDL_INIT_VIDEO))
 		return;
+
 	SDL_BlitSurface(buffer, NULL, screen, NULL);
+
+	/* halt until the time for this frame has passed */
+	while(g_timer_elapsed(timer, NULL) < (gdouble)(1/fps));
+	g_timer_start(timer);
+
+	/* draw the frame on the screen */
 	SDL_Flip(screen);
 }
 
 /* Create a new video device, and return its number */
-int emu_video_init(char* filename, double video_cycles_per_cpu_cycle)
+int emu_video_init(char* filename, double video_cycles_per_cpu_cycle, int frames_per_second)
 {
 	GModule *video_mod;
 	gchar *path, *type;
@@ -291,6 +300,9 @@ int emu_video_init(char* filename, double video_cycles_per_cpu_cycle)
 
 	buffer = SDL_CreateRGBSurface(SDL_HWSURFACE, *emu_video_pixels_x,
 			*emu_video_pixels_y, 8, 0, 0, 0, 0);
+
+	fps = frames_per_second;
+	timer = g_timer_new();
 
 	emu_video_reset();
 

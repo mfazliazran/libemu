@@ -361,33 +361,52 @@ static void cpu_step_clicked(GtkButton* cpu_step, gpointer data)
 }
 
 /* When the button Run/Pause is clicked */
-void cpu_run_pause_clicked(GtkButton* cpu_run_pause, gpointer data)
+static void cpu_run_pause_clicked(GtkButton* cpu_run_pause, gpointer data)
 {
 	if(!running)
-	{
-		gtk_label_set_text_with_mnemonic(GTK_LABEL(run_label), "_Pause");
-		gtk_image_set_from_stock(GTK_IMAGE(run_image), GTK_STOCK_MEDIA_PAUSE, GTK_ICON_SIZE_SMALL_TOOLBAR);
-		gtk_widget_set_sensitive(cpu_step, FALSE);
-		gtk_widget_set_sensitive(cpu_vblank, FALSE);
-		gtk_widget_set_sensitive(cpu_reference, FALSE);
-		running = TRUE;
-		g_idle_add_full(G_PRIORITY_HIGH, run, NULL, NULL);
-		//run();
-	}
+		emu_cpu_run();
 	else
-	{
-		running = FALSE;
-		gtk_label_set_text_with_mnemonic(GTK_LABEL(run_label), "_Run");
-		gtk_image_set_from_stock(GTK_IMAGE(run_image), GTK_STOCK_MEDIA_PLAY, GTK_ICON_SIZE_SMALL_TOOLBAR);
-		gtk_widget_set_sensitive(cpu_step, TRUE);
-		gtk_widget_set_sensitive(cpu_vblank, TRUE);
-		gtk_widget_set_sensitive(cpu_reference, TRUE);
-	}
+		emu_cpu_pause();
 }
 
 /*
  * API CALLS
  */
+
+/* Runs the execution */
+void emu_cpu_run()
+{
+	gtk_label_set_text_with_mnemonic(GTK_LABEL(run_label), "_Pause");
+	gtk_image_set_from_stock(GTK_IMAGE(run_image), GTK_STOCK_MEDIA_PAUSE, GTK_ICON_SIZE_SMALL_TOOLBAR);
+	gtk_widget_set_sensitive(cpu_step, FALSE);
+	gtk_widget_set_sensitive(cpu_vblank, FALSE);
+	gtk_widget_set_sensitive(cpu_reference, FALSE);
+	g_signal_handler_block(pause, pause_signal);
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(pause), FALSE);
+	g_signal_handler_unblock(pause, pause_signal);
+	g_signal_handler_block(run_b, run_signal);
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(run_b), TRUE);
+	g_signal_handler_unblock(run_b, run_signal);
+	running = TRUE;
+	g_idle_add_full(G_PRIORITY_HIGH, run, NULL, NULL);
+}
+
+/* Pauses the execution */
+void emu_cpu_pause()
+{
+	running = FALSE;
+	gtk_label_set_text_with_mnemonic(GTK_LABEL(run_label), "_Run");
+	gtk_image_set_from_stock(GTK_IMAGE(run_image), GTK_STOCK_MEDIA_PLAY, GTK_ICON_SIZE_SMALL_TOOLBAR);
+	gtk_widget_set_sensitive(cpu_step, TRUE);
+	gtk_widget_set_sensitive(cpu_vblank, TRUE);
+	gtk_widget_set_sensitive(cpu_reference, TRUE);
+	g_signal_handler_block(run_b, run_signal);
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(run_b), FALSE);
+	g_signal_handler_unblock(run_b, run_signal);
+	g_signal_handler_block(pause, pause_signal);
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(pause), TRUE);
+	g_signal_handler_unblock(pause, pause_signal);
+}
 
 /* Return the reference number */
 unsigned long emu_cpu_get_debugger_reference()
