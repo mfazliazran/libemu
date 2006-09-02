@@ -244,7 +244,7 @@ TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
 	  awk '    { files[$$0] = 1; } \
 	       END { for (i in files) print i; }'`; \
 	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
-	  || (cd $(srcdir) && etags -o $$here/TAGS $(ETAGS_ARGS) $$tags  $$unique $(LISP))
+	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $$unique $(LISP) -o $$here/TAGS)
 
 mostlyclean-tags:
 
@@ -270,14 +270,6 @@ distdir: $(DISTFILES)
 	    || cp -p $$d/$$file $(distdir)/$$file || :; \
 	  fi; \
 	done
-cpu.lo cpu.o : cpu.c libemu.h other.h
-generic.lo generic.o : generic.c libemu.h other.h
-libemu.lo libemu.o : libemu.c libemu.h other.h
-other.lo other.o : other.c libemu.h other.h
-ram.lo ram.o : ram.c libemu.h other.h
-rom.lo rom.o : rom.c libemu.h
-video.lo video.o : video.c libemu.h other.h
-
 info-am:
 info: info-am
 dvi-am:

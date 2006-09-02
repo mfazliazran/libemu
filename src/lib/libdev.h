@@ -23,10 +23,6 @@ void (*dev_mem_set)(unsigned long int pos, unsigned char data);
 unsigned char (*dev_mem_get)(unsigned long int pos);
 
 /* Video */
-EXPORT int dev_video_pos_x;
-EXPORT int dev_video_pos_y;
-EXPORT int dev_video_wait_vsync = 0;
-EXPORT int dev_video_wait_hsync = 0;
 void (*dev_video_update_screen)();
 void (*dev_video_create_palette)(int n_colors);
 void (*dev_video_palette_set_color)(int n_color, int r, int g, int b);
