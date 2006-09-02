@@ -17,6 +17,7 @@ void emu_error(char* message);
 /* CPU functions */
 int emu_cpu_init(char* filename);
 void emu_cpu_run();
+void emu_cpu_pause();
 void emu_cpu_set_breakpoint(unsigned long int pos, int one_time_only);
 void emu_cpu_unset_breakpoint(unsigned long int pos);
 unsigned long emu_cpu_get_debugger_reference();

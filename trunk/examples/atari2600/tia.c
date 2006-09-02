@@ -36,6 +36,11 @@ EXPORT int dev_video_scanline_cycles = 228;
 EXPORT int dev_video_scanlines_vblank = 40;
 EXPORT int dev_video_scanlines_overscan = 30;
 
+EXPORT int dev_video_pos_x = 0;
+EXPORT int dev_video_pos_y = 0;
+EXPORT int dev_video_wait_vsync = 0;
+EXPORT int dev_video_wait_hsync = 0;
+
 char tmp[1000];
 
 /*

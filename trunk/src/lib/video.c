@@ -213,12 +213,12 @@ int emu_video_init(char* filename, double video_cycles_per_cpu_cycle, int frames
 		g_error("variable dev_video_pos_x is not defined");
 	if(!g_module_symbol(video_mod, "dev_video_pos_y", (gpointer*)&emu_video_pos_y))
 		g_error("variable dev_video_pos_y is not defined");
-	*emu_video_pos_x = *emu_video_pos_y = 0;
+	// *emu_video_pos_x = *emu_video_pos_y = 0;
 	if(!g_module_symbol(video_mod, "dev_video_wait_vsync", (gpointer*)&emu_video_wait_vsync))
 		g_error("variable dev_video_wait_vsync is not defined");
 	if(!g_module_symbol(video_mod, "dev_video_wait_hsync", (gpointer*)&emu_video_wait_hsync))
 		g_error("variable dev_video_wait_hsync is not defined");
-	*emu_video_wait_vsync = *emu_video_wait_hsync = 0;
+	// *emu_video_wait_vsync = *emu_video_wait_hsync = 0;
 
 	if(!g_module_symbol(video_mod, "dev_video_pixels_x", (gpointer*)&emu_video_pixels_x))
 		g_error("variable dev_video_pixels_x is not defined");

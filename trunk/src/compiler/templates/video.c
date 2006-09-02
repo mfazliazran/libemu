@@ -37,8 +37,10 @@ EXPORT int dev_video_scanlines_overscan = 30;
 
 /* This variable has the current place of the electorn. It'll be set by the
  * library automaticly, but can also be set by the video card */
-EXPORT int dev_video_pos_x;
-EXPORT int dev_video_pos_y;
+EXPORT int dev_video_pos_x = 0;
+EXPORT int dev_video_pos_y = 0;
+EXPORT int dev_video_wait_vsync = 0;
+EXPORT int dev_video_wait_hsync = 0;
 
 char tmp[1000];
 
