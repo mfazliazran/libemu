@@ -1,5 +1,14 @@
 #include <glib.h>
 #include "libemu.h"
+#include "other.h"
+
+void emu_rom_set_load_callback(char* title, char* filter, int (*callback)(char* filename))
+{
+	GtkWidget *button;
+	button = button_with_stock_image(title, "gtk-open", FALSE);
+	gtk_box_pack_start_defaults(GTK_BOX(controls), button);
+	gtk_widget_show(button);
+}
 
 int emu_rom_load(char* filename, long pos)
 {

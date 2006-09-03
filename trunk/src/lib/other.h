@@ -24,7 +24,7 @@ GtkWidget* button_with_pixmap_image(gchar* mnemonic, gint image_number, gboolean
 unsigned long hex2long(char* hex);
 
 GtkWidget *window;
-GtkWidget *internal_hbox, *external_hbox;
+GtkWidget *controls, *internal_hbox, *external_hbox;
 GtkWidget *debug_menu;
 GtkWidget *statusbar;
 gboolean running;
