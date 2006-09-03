@@ -18,7 +18,8 @@ int main(int argc, char** argv)
 	//temp = emu_generic_init("temp", 1);
 
 	/* Load ROM */
-	emu_rom_load("rom/simple.bin", 0xF000);
+	// emu_rom_load("rom/simple.bin", 0xF000);
+	emu_rom_set_load_callback("Load ROM", "*.bin", NULL);
 
 	/* Start emulation */
 	emu_cpu_reset();

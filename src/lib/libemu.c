@@ -39,7 +39,7 @@ static gboolean close_clicked (GtkWidget *widget, GdkEvent *event, gpointer user
  */
 void emu_init(const char* name, int argc, char** argv)
 {
-	GtkWidget *vbox, *hbox, *controls;
+	GtkWidget *vbox, *hbox;
 	
 	debug_menu = gtk_menu_new(); // off
 

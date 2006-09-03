@@ -1,5 +1,5 @@
-#ifndef _LIBEMU_DEV_H_
-#define _LIBEMU_DEV_H_
+#ifndef _LIBDEV_H_
+#define _LIBDEV_H_
 
 #ifdef _WIN32
 #	define EXPORT __declspec(dllexport)
