@@ -15,6 +15,8 @@ static SDL_Surface *screen, *buffer;
 static gint number_of_colors;
 static gdouble fps;
 static GTimer *timer;
+static gint frame_count = 0;
+static double time_busy = 0.0f;
 
 /* TODO - check when SDL screen is asked to close */
 
@@ -142,14 +144,23 @@ void emu_video_update_screen()
 	if(!SDL_WasInit(SDL_INIT_VIDEO))
 		return;
 
-	SDL_BlitSurface(buffer, NULL, screen, NULL);
-
 	/* halt until the time for this frame has passed */
+	SDL_BlitSurface(buffer, NULL, screen, NULL);
+	time_busy += g_timer_elapsed(timer, NULL);
 	while(g_timer_elapsed(timer, NULL) < (gdouble)(1/fps));
 	g_timer_start(timer);
+	SDL_Flip(screen);
+
+	frame_count++;
+	if(frame_count >= fps)
+	{
+		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(usage_bar),
+				time_busy);
+		frame_count = 0;
+		time_busy = 0.0f;
+	}
 
 	/* draw the frame on the screen */
-	SDL_Flip(screen);
 }
 
 /* Create a new video device, and return its number */
