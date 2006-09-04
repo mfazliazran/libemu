@@ -39,7 +39,7 @@ static gboolean close_clicked (GtkWidget *widget, GdkEvent *event, gpointer user
  */
 void emu_init(const char* name, int argc, char** argv)
 {
-	GtkWidget *vbox, *hbox;
+	GtkWidget *vbox, *hbox, *infobox;
 	
 	debug_menu = gtk_menu_new(); // off
 
@@ -98,6 +98,18 @@ void emu_init(const char* name, int argc, char** argv)
 	gtk_button_box_set_layout(GTK_BUTTON_BOX(external_hbox), GTK_BUTTONBOX_START);
 	gtk_box_set_spacing(GTK_BOX(external_hbox), 6);
 	gtk_box_pack_start_defaults(GTK_BOX(vbox), external_hbox);
+
+	/* Other info */
+	hbox = gtk_hbox_new(FALSE, 6);
+	gtk_box_pack_start(GTK_BOX(hbox), gtk_label_new("Information"), FALSE, FALSE, 0);
+	gtk_box_pack_start_defaults(GTK_BOX(hbox), gtk_hseparator_new());
+	gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
+
+	infobox = gtk_hbox_new(FALSE, 6);
+	gtk_box_pack_start_defaults(GTK_BOX(vbox), infobox);
+	gtk_box_pack_start(GTK_BOX(infobox), gtk_label_new("% usage"), FALSE, FALSE, 0);
+	usage_bar = gtk_progress_bar_new();
+	gtk_box_pack_start_defaults(GTK_BOX(infobox), usage_bar);
 
 	gtk_container_add(GTK_CONTAINER(window), vbox);
 }
