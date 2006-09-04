@@ -29,6 +29,7 @@ GtkWidget *debug_menu;
 GtkWidget *statusbar;
 gboolean running;
 GtkWidget *run_b, *pause;
+GtkWidget *usage_bar;
 guint run_signal, pause_signal;
 
 int has_cpu, has_video, has_ram, generic_count;

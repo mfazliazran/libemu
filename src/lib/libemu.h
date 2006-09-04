@@ -77,6 +77,8 @@ int emu_mem_map_add(int device, unsigned long int initial, unsigned long int fin
 
 /* libemu ROM API */
 int emu_rom_load(char* filename, long pos);
-void emu_rom_set_load_callback(char* title, char* filter, int (*callback)(char* filename));
+long emu_rom_size(char* filename);
+long emu_rom_size_k(char* filename);
+void emu_rom_set_load_callback(char* title, char* filter, void (*callback)(char* filename));
 
 #endif
