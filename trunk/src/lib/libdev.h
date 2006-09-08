@@ -1,17 +1,13 @@
 #ifndef _LIBDEV_H_
 #define _LIBDEV_H_
 
+#include "libdefs.h"
+
 #ifdef _WIN32
 #	define EXPORT __declspec(dllexport)
 #else
 #	define EXPORT
 #endif
-
-typedef enum {
-	EXACT_SYNC = 0,
-	HORIZONTAL_SYNC,
-	VERTICAL_SYNC
-} SYNC_TYPE;
 
 /* General */
 void (*dev_message)(char* message);
