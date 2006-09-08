@@ -19,7 +19,7 @@ static void joystick_show_hide(GtkToggleButton *item, gpointer data)
 }
 
 /* When the close button is clicked on the joystick */
-static gboolean generic_hide(GtkWidget *widget, GdkEvent *event, gpointer data)
+static gboolean joystick_hide(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(data), FALSE);
 	gtk_widget_hide(widget);
