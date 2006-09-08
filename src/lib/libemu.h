@@ -1,7 +1,10 @@
 #ifndef _LIBEMU_H_
 #define _LIBEMU_H_
 
-#define MAX_GENERIC 255
+#include "libdefs.h"
+
+#define MAX_GENERIC  255
+#define MAX_JOYSTICK 2
 
 #define CPU   -1
 #define VIDEO -2
@@ -80,5 +83,8 @@ int emu_rom_load(char* filename, long pos);
 long emu_rom_size(char* filename);
 long emu_rom_size_k(char* filename);
 void emu_rom_set_load_callback(char* title, char* filter, void (*callback)(char* filename));
+
+/* libemu joystick API */
+int emu_joystick_init(void (*callback)(KEYEVENT_TYPE event_type, JOYBUTTON joybutton));
 
 #endif

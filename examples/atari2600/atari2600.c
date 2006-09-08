@@ -1,6 +1,11 @@
 #include <libemu.h>
 #include <stdlib.h>
 
+void joystick_event(KEYEVENT_TYPE evt_type, JOYBUTTON button)
+{
+
+}
+
 void load_rom(char* filename)
 {
 	switch(emu_rom_size_k(filename))
@@ -36,6 +41,9 @@ int main(int argc, char** argv)
 	/* Load ROM */
 	// emu_rom_load("rom/simple.bin", 0xF000);
 	emu_rom_set_load_callback("Load ROM", "*.bin", load_rom);
+
+	/* Initialize joystick */
+	emu_joystick_init(joystick_event);
 
 	/* Start emulation */
 	emu_cpu_reset();
