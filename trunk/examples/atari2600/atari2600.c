@@ -1,9 +1,9 @@
 #include <libemu.h>
 #include <stdlib.h>
 
-void joystick_event(KEYEVENT_TYPE evt_type, JOYBUTTON button)
+void joystick_event(KEYEVENT_TYPE evt_type, int joynumber, JOYBUTTON button)
 {
-
+	printf("%d %d\n", joynumber, button);
 }
 
 void load_rom(char* filename)
