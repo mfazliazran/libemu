@@ -14,8 +14,8 @@ typedef enum {
 
 typedef enum {
 	UP = 0, DOWN, LEFT, RIGHT,
-	B1, B2, B3, B4, B5, B6, B7, B8, B9, B0,
-	S1, S2, S3, S4, S5
+	B0, B1, B2, B3, B4, B5, B6, B7, B8, B9,
+	S0, S1, S2, S3, S4
 } JOYBUTTON;
 
 #endif

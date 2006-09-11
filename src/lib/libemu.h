@@ -85,6 +85,6 @@ long emu_rom_size_k(char* filename);
 void emu_rom_set_load_callback(char* title, char* filter, void (*callback)(char* filename));
 
 /* libemu joystick API */
-int emu_joystick_init(void (*callback)(KEYEVENT_TYPE event_type, JOYBUTTON joybutton));
+int emu_joystick_init(void (*callback)(KEYEVENT_TYPE event_type, int joynumber, JOYBUTTON joybutton));
 
 #endif
