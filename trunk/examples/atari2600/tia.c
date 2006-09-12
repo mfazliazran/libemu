@@ -46,8 +46,8 @@ char tmp[1000];
 /*
  * LOCAL VARIABLES
  */
-static int m0_pos = 80;
-static int m0_size = 1;
+static int m0_pos;
+static int m0_size;
 
 /*
  * AUXILIARY FUNCTIONS
@@ -72,7 +72,9 @@ EXPORT void dev_video_reset()
 		dev_video_palette_set_color(i, 
 				colortable[i] & 0xff,
 				(colortable[i] / 0x100) & 0xff,
-				(colortable[i] / 0x10000) & 0xff);				
+				(colortable[i] / 0x10000) & 0xff);	
+	m0_pos = 80;
+	m0_size = 1;
 }
 
 /* You must implement this function.
@@ -87,14 +89,16 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data)
 {
 	switch(pos)
 	{
-		case VSYNC:
+		case VSYNC: /* Vertical sync */
 			if(data & 0x2)
 				dev_video_wait_vsync = -1;
 			break;
-		case WSYNC:
+
+		case WSYNC: /* Wait for sync */
 			dev_video_wait_hsync = -1;
 			break;
-		case HMOVE:
+
+		case HMOVE: /* Horizontal movement of players and missiles */
 			{
 				int hmm0 = dev_mem_get(HMM0) >> 4;
 				if(hmm0 >= 1 && hmm0 <= 7)
@@ -106,7 +110,18 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data)
 				else if (m0_pos < 0)
 					m0_pos = 159;
 			}
+			break;
+			/* todo - other players and missiles */
 
+		case NUSIZ0: /* Player and missile 0 size */
+			switch((data & 0x30) >> 4)
+			{
+				case 0: m0_size = 1; break;
+				case 1: m0_size = 2; break;
+				case 2: m0_size = 4; break;
+				case 4: m0_size = 8; break;
+			}
+			break;
 	}
 	return -1;
 }
@@ -147,6 +162,7 @@ EXPORT char* dev_video_debug_name(int n)
 	{
 		case 0:	return "X";
 		case 1: return "Y";
+		case 2: return "m0_size";
 		default: return NULL;
 	}
 }
@@ -166,6 +182,9 @@ EXPORT char* dev_video_debug(int n)
 			break;
 		case 1:
 			sprintf(info, "%d", y());
+			break;
+		case 2:
+			sprintf(info, "%d", m0_size);
 			break;
 		default:
 			return NULL;
