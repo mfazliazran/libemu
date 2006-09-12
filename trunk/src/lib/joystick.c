@@ -24,7 +24,10 @@ static void joystick_button_clicked(GtkWidget *widget, gpointer data)
 	void (*callback)(KEYEVENT_TYPE event_type, int joynumber, JOYBUTTON joybutton);
 
 	callback = dt->callback;
-	callback(PRESSED, dt->joynumber, dt->joybutton);
+	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget)))
+		callback(PRESSED, dt->joynumber, dt->joybutton);
+	else
+		callback(RELEASED, dt->joynumber, dt->joybutton);
 }
 
 /* When the joystick menu item is clicked on the main window */
