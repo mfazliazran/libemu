@@ -10,8 +10,6 @@ typedef struct
 	void* callback;
 } DATA;
 
-GtkWindow *joystick_window[MAX_JOYSTICK];
-
 /*
  * EVENT HANDLERS
  */
@@ -76,7 +74,7 @@ static void add_button(GtkWidget *table, const char *label, int define, int x, i
 /* Initialize a new joystick */
 int emu_joystick_init(void (*callback)(KEYEVENT_TYPE event_type, int joynumber, JOYBUTTON joybutton))
 {
-	GtkWidget *debug_item, *table, *button;
+	GtkWidget *joystick_window, *debug_item, *table, *button;
 
 	if(jc >= MAX_JOYSTICK)
 	{
@@ -89,11 +87,11 @@ int emu_joystick_init(void (*callback)(KEYEVENT_TYPE event_type, int joynumber, 
 	gtk_box_pack_start_defaults(GTK_BOX(external_hbox), debug_item);
 
 	/* Create window */
-	joystick_window[jc] = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	gtk_window_set_title(GTK_WINDOW(joystick_window[jc]), g_strdup_printf("Joystick %d", jc));
-	gtk_window_set_destroy_with_parent(GTK_WINDOW(joystick_window[jc]), TRUE);
-	g_signal_connect(debug_item, "toggled", G_CALLBACK(joystick_show_hide), joystick_window[jc]);
-	g_signal_connect(joystick_window[jc], "delete_event", G_CALLBACK(joystick_hide), debug_item);
+	joystick_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	gtk_window_set_title(GTK_WINDOW(joystick_window), g_strdup_printf("Joystick %d", jc));
+	gtk_window_set_destroy_with_parent(GTK_WINDOW(joystick_window), TRUE);
+	g_signal_connect(debug_item, "toggled", G_CALLBACK(joystick_show_hide), joystick_window);
+	g_signal_connect(joystick_window, "delete_event", G_CALLBACK(joystick_hide), debug_item);
 
 	/* Create table */
 	table = gtk_table_new(4, 9, TRUE);
@@ -120,7 +118,7 @@ int emu_joystick_init(void (*callback)(KEYEVENT_TYPE event_type, int joynumber, 
 	add_button(table, "B8", B8, 7, 3, jc, callback);
 	add_button(table, "B9", B9, 8, 3, jc, callback);
 
-	gtk_container_add(GTK_CONTAINER(joystick_window[jc]), table);
+	gtk_container_add(GTK_CONTAINER(joystick_window), table);
 	gtk_widget_show_all(table);
 
 	jc++;

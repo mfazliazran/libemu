@@ -127,3 +127,9 @@ static int colortable[256] =
 #define CXM1FB	0x5
 #define CXBLPF	0x6
 #define CXPPMM	0x7
+#define INPT0   0x8
+#define INPT1   0x9
+#define INPT2   0xa
+#define INPT3   0xb
+#define INPT4   0xc
+#define INPT5   0xd
