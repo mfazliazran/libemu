@@ -1,0 +1,3 @@
+Graphics:
+
+SDL Hardware - http://www.linuxdevcenter.com/pub/a/linux/2003/08/07/sdl_anim.html
