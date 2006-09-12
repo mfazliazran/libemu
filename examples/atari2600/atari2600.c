@@ -1,9 +1,33 @@
 #include <libemu.h>
 #include <stdlib.h>
 
+#define SWCHA  0x280
+
 void joystick_event(KEYEVENT_TYPE evt_type, int joynumber, JOYBUTTON button)
 {
-	printf("%d %d\n", joynumber, button);
+	if(joynumber != 0)
+		return;
+
+	if(evt_type == PRESSED)
+	{
+		switch(button)
+		{
+			case UP:    emu_mem_set(SWCHA, emu_mem_get(SWCHA) ^ 0x10); break;
+			case DOWN:  emu_mem_set(SWCHA, emu_mem_get(SWCHA) ^ 0x20); break;
+			case LEFT:  emu_mem_set(SWCHA, emu_mem_get(SWCHA) ^ 0x40); break;
+			case RIGHT: emu_mem_set(SWCHA, emu_mem_get(SWCHA) ^ 0x80); break;
+		}
+	}
+	else
+	{
+		switch(button)
+		{
+			case UP:    emu_mem_set(SWCHA, emu_mem_get(SWCHA) | 0x10); break;
+			case DOWN:  emu_mem_set(SWCHA, emu_mem_get(SWCHA) | 0x20); break;
+			case LEFT:  emu_mem_set(SWCHA, emu_mem_get(SWCHA) | 0x40); break;
+			case RIGHT: emu_mem_set(SWCHA, emu_mem_get(SWCHA) | 0x80); break;
+		}
+	}
 }
 
 void load_rom(char* filename)
