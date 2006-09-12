@@ -46,8 +46,18 @@ char tmp[1000];
 /*
  * LOCAL VARIABLES
  */
+
+/* Player 0 */
+static int p0_color;
+
+/* Missile 0 */
+static int m0_enabled;
 static int m0_pos;
 static int m0_size;
+static int m0_mov;
+
+/* Playfield */
+static unsigned char bg_color;
 
 /*
  * AUXILIARY FUNCTIONS
@@ -73,8 +83,14 @@ EXPORT void dev_video_reset()
 				colortable[i] & 0xff,
 				(colortable[i] / 0x100) & 0xff,
 				(colortable[i] / 0x10000) & 0xff);	
+	p0_color = 0;
+
 	m0_pos = 80;
 	m0_size = 1;
+	m0_enabled = 0;
+	m0_mov = 0;
+
+	bg_color = 0;
 }
 
 /* You must implement this function.
@@ -87,6 +103,11 @@ EXPORT void dev_video_reset()
  *   if -1 is returned, the memory will be updated. */
 EXPORT int dev_video_memory_set(long pos, unsigned char data)
 {
+	/* The joystick registers are read/write... */
+	if(pos >= INPT0 && pos <= INPT5)
+		return -1;
+
+	/* ...but the other registers are read only */
 	switch(pos)
 	{
 		case VSYNC: /* Vertical sync */
@@ -98,20 +119,35 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data)
 			dev_video_wait_hsync = -1;
 			break;
 
+		case COLUBK: /* background color */
+			bg_color = data;
+			break;
+
 		case HMOVE: /* Horizontal movement of players and missiles */
+			m0_pos += m0_mov;
+			if (m0_pos >= 160)
+				m0_pos = 0;
+			else if (m0_pos < 0)
+				m0_pos = 159;
+			break;
+
+		case COLUP0:
+			p0_color = data;
+			break;
+
+		case HMM0: /* horizontal movement of missile 0 */
 			{
-				int hmm0 = dev_mem_get(HMM0) >> 4;
+				int hmm0 = data >> 4;
 				if(hmm0 >= 1 && hmm0 <= 7)
-					m0_pos -= hmm0;
+					m0_mov = -hmm0;
 				else if(hmm0 >= 8 && hmm0 <= 15)
-					m0_pos += (16 - hmm0);
-				if (m0_pos >= 160)
-					m0_pos = 0;
-				else if (m0_pos < 0)
-					m0_pos = 159;
+					m0_mov = (16 - hmm0);
 			}
 			break;
-			/* todo - other players and missiles */
+
+		case ENAM0: /* Enable missile 0 */
+			m0_enabled = (data & 0x2);
+			break;
 
 		case NUSIZ0: /* Player and missile 0 size */
 			switch((data & 0x30) >> 4)
@@ -123,7 +159,7 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data)
 			}
 			break;
 	}
-	return -1;
+	return 0;
 }
 
 /* Executes one step. Read the info on dev_video_sync_type above to understand
@@ -135,11 +171,11 @@ EXPORT void dev_video_step(int cycles)
 		return;
 
 	/* draw background */
-	dev_video_draw_hline(0, 159, y(), dev_mem_get(COLUBK));
+	dev_video_draw_hline(0, 159, y(), bg_color);
 
-	/* draw missile */
-	if(dev_mem_get(ENAM0) & 0x2)
-		dev_video_draw_hline(m0_pos, m0_pos+m0_size, y(), dev_mem_get(COLUP0));
+	/* draw missiles */
+	if(m0_enabled)
+		dev_video_draw_hline(m0_pos, m0_pos+m0_size, y(), p0_color);
 }
 
 /* The following functions (inside the DEBUG directive) are used only by the
@@ -162,7 +198,8 @@ EXPORT char* dev_video_debug_name(int n)
 	{
 		case 0:	return "X";
 		case 1: return "Y";
-		case 2: return "m0_size";
+		case 2: return "INPT4";
+		case 3: return "BG Color";
 		default: return NULL;
 	}
 }
@@ -184,7 +221,10 @@ EXPORT char* dev_video_debug(int n)
 			sprintf(info, "%d", y());
 			break;
 		case 2:
-			sprintf(info, "%d", m0_size);
+			sprintf(info, "0x%02x", dev_mem_get(INPT4));
+			break;
+		case 3:
+			sprintf(info, "0x%02x", bg_color);
 			break;
 		default:
 			return NULL;
