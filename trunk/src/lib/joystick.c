@@ -65,6 +65,8 @@ static void add_button(GtkWidget *table, const char *label, int define, int x, i
 	button = gtk_toggle_button_new_with_label(label);
 	g_signal_connect(button, "toggled", G_CALLBACK(joystick_button_clicked), (gpointer)dt);
 	gtk_table_attach_defaults(GTK_TABLE(table), button, x, x+1, y, y+1);
+
+	joy_button[joynumber][define] = button;
 }
 
 /*

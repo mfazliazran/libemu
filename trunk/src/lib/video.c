@@ -6,8 +6,8 @@
 #define MAX_REGISTERS 255
 #define MAX_VERTICAL 12
 
-static GtkWidget* video_window;
-static GtkWidget* video_register[MAX_REGISTERS];
+static GtkWidget *video_window, *monitor;
+static GtkWidget *video_register[MAX_REGISTERS];
 static gint num_registers;
 static gboolean video_loaded = FALSE;
 static SDL_Color *color;
@@ -28,8 +28,21 @@ static int FilterEvents(const SDL_Event *e)
 	switch(e->type)
 	{
 		case SDL_QUIT:
-			emu_message("Quit!");
+			gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(monitor), FALSE);
 			return 0;
+		case SDL_KEYDOWN:
+		case SDL_KEYUP:
+			if(e->key.keysym.sym == SDLK_UP)
+				gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(joy_button[0][UP]), e->key.state == SDL_PRESSED ? TRUE : FALSE);
+			if(e->key.keysym.sym == SDLK_DOWN)
+				gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(joy_button[0][DOWN]), e->key.state == SDL_PRESSED ? TRUE : FALSE);
+			if(e->key.keysym.sym == SDLK_RIGHT)
+				gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(joy_button[0][RIGHT]), e->key.state == SDL_PRESSED ? TRUE : FALSE);
+			if(e->key.keysym.sym == SDLK_LEFT)
+				gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(joy_button[0][LEFT]), e->key.state == SDL_PRESSED ? TRUE : FALSE);
+			if(e->key.keysym.sym == SDLK_z)
+				gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(joy_button[0][B0]), e->key.state == SDL_PRESSED ? TRUE : FALSE);
+			break;
 	}
 	return 1;
 }
@@ -41,7 +54,6 @@ static int FilterEvents(const SDL_Event *e)
 /* When the monitor item is clicked on the main window */
 static void monitor_show_hide(GtkToggleButton *item, gpointer data)
 {
-	// GtkWindow* window = GTK_WINDOW(data);
 	if(gtk_toggle_button_get_active(item))
 	{
 		SDL_InitSubSystem(SDL_INIT_VIDEO);
@@ -184,7 +196,7 @@ int emu_video_init(char* filename, double video_cycles_per_cpu_cycle, int frames
 {
 	GModule *video_mod;
 	gchar *path, *type;
-	GtkWidget *debug_item, *monitor;
+	GtkWidget *debug_item;
 	GtkWidget *table, *label;
 	gint row, col, i;
 	SYNC_TYPE* sync;
