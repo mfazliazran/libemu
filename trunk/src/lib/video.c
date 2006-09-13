@@ -298,6 +298,10 @@ int emu_video_init(char* filename, double video_cycles_per_cpu_cycle, int frames
 	}
 	num_registers = i;
 
+#ifdef __linux__
+	//putenv("SDL_VIDEODRIVER=dga");
+#endif
+
 	/* Initialize video (SDL) */
 	if(SDL_Init(SDL_INIT_VIDEO) == -1)
 		g_error("SDL could not be initialized (%s)", SDL_GetError());
