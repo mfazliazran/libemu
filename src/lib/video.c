@@ -18,7 +18,21 @@ static GTimer *timer;
 static gint frame_count = 0;
 static double time_busy = 0.0f;
 
-/* TODO - check when SDL screen is asked to close */
+/*
+ * PRIVATE FUNCTIONS
+ */
+
+/* get a event from SDL */
+static int FilterEvents(const SDL_Event *e)
+{
+	switch(e->type)
+	{
+		case SDL_QUIT:
+			emu_message("Quit!");
+			return 0;
+	}
+	return 1;
+}
 
 /*
  * EVENT HANDLERS
@@ -36,6 +50,7 @@ static void monitor_show_hide(GtkToggleButton *item, gpointer data)
 		if(!screen)
 			g_error("A SDL_Screen could not be created (%s)", SDL_GetError());
 		SDL_WM_SetCaption("Monitor", "Monitor");
+		SDL_SetEventFilter(FilterEvents);
 		emu_video_update_screen();
 	}
 	else
@@ -149,8 +164,11 @@ void emu_video_update_screen()
 	time_busy += g_timer_elapsed(timer, NULL);
 	while(g_timer_elapsed(timer, NULL) < (gdouble)(1/fps));
 	g_timer_start(timer);
+
+	/* draw the frame on the screen */
 	SDL_Flip(screen);
 
+	/* update the progressbar */
 	frame_count++;
 	if(frame_count >= fps)
 	{
@@ -159,8 +177,6 @@ void emu_video_update_screen()
 		frame_count = 0;
 		time_busy = 0.0f;
 	}
-
-	/* draw the frame on the screen */
 }
 
 /* Create a new video device, and return its number */
