@@ -25,6 +25,7 @@ GtkWidget *statusbar;
 gboolean running;
 GtkWidget *run_b, *pause;
 GtkWidget *usage_bar;
+GtkWidget *joy_button[MAX_JOYSTICK][NUM_JOY_BUTTONS];
 guint run_signal, pause_signal;
 
 int has_cpu, has_video, has_ram, generic_count, joystick_count;
