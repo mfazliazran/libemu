@@ -91,6 +91,9 @@ EXPORT void dev_video_reset()
 	m0_mov = 0;
 
 	bg_color = 0;
+
+	/* set joystick as unpressed */
+	dev_mem_set_direct(INPT4, 0x80);
 }
 
 /* You must implement this function.
@@ -104,8 +107,10 @@ EXPORT void dev_video_reset()
 EXPORT int dev_video_memory_set(long pos, unsigned char data)
 {
 	/* The joystick registers are read/write... */
+	/*
 	if(pos >= INPT0 && pos <= INPT5)
 		return -1;
+	*/
 
 	/* ...but the other registers are read only */
 	switch(pos)
@@ -142,6 +147,8 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data)
 					m0_mov = -hmm0;
 				else if(hmm0 >= 8 && hmm0 <= 15)
 					m0_mov = (16 - hmm0);
+				else
+					m0_mov = 0;
 			}
 			break;
 

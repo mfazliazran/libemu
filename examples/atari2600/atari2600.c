@@ -17,7 +17,7 @@ void joystick_event(KEYEVENT_TYPE evt_type, int joynumber, JOYBUTTON button)
 			case DOWN:  emu_mem_set(SWCHA, emu_mem_get(SWCHA) ^ 0x20); break;
 			case LEFT:  emu_mem_set(SWCHA, emu_mem_get(SWCHA) ^ 0x40); break;
 			case RIGHT: emu_mem_set(SWCHA, emu_mem_get(SWCHA) ^ 0x80); break;
-			case B0:    emu_mem_set(INPT4, emu_mem_get(INPT4) ^ 0x80); break;
+			case B0:    emu_mem_set_direct(INPT4, emu_mem_get(INPT4) ^ 0x80); break;
 		}
 	}
 	else
@@ -28,7 +28,7 @@ void joystick_event(KEYEVENT_TYPE evt_type, int joynumber, JOYBUTTON button)
 			case DOWN:  emu_mem_set(SWCHA, emu_mem_get(SWCHA) | 0x20); break;
 			case LEFT:  emu_mem_set(SWCHA, emu_mem_get(SWCHA) | 0x40); break;
 			case RIGHT: emu_mem_set(SWCHA, emu_mem_get(SWCHA) | 0x80); break;
-			case B0:    emu_mem_set(INPT4, emu_mem_get(INPT4) | 0x80); break;
+			case B0:    emu_mem_set_direct(INPT4, emu_mem_get(INPT4) | 0x80); break;
 		}
 	}
 }
@@ -47,6 +47,7 @@ void load_rom(char* filename)
 		default:
 			emu_error("Invalid ROM size");
 	}
+	emu_cpu_reset();
 }
 
 int main(int argc, char** argv)
