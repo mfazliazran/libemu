@@ -120,6 +120,19 @@ void emu_main()
 	gtk_main();
 }
 
+/* TODO - hard reset */
+void emu_reset_soft()
+{
+	int i;
+
+	if(has_cpu)
+		emu_cpu_reset();
+	if(has_video)
+		emu_video_reset();
+	for(i=1; i < generic_count; i++)
+		emu_generic_reset[i]();
+}
+
 void emu_message(char* message)
 {
 	g_message(message);

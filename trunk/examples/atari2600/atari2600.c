@@ -47,7 +47,7 @@ void load_rom(char* filename)
 		default:
 			emu_error("Invalid ROM size");
 	}
-	emu_cpu_reset();
+	emu_reset_soft();
 }
 
 int main(int argc, char** argv)

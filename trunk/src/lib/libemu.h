@@ -14,6 +14,7 @@
 /* General functions */
 void emu_init(const char* name, int argc, char** argv);
 void emu_main();
+void emu_reset_soft();
 void emu_message(char* message);
 void emu_error(char* message);
 
