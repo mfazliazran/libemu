@@ -62,12 +62,20 @@ static int m0_pos, m1_pos;
 static int m0_size, m1_size;
 static int m0_mov, m1_mov;
 
+/* Playfield */
+static int pf_reflect; 	/* if the playfiled will be reflected in the right
+			   side of the screen */
+static int pf_score;	/* if set, the left pf is the color of P0, and the
+			   left if the color of P1 */
+static int pf_top;	/* playfield is drawn of the top of P0, M0, P1 and M1 */
+static int pf_graphics[20]; /* graphics of the playfield */
+
+/* Background */
+static unsigned char bg_color;
+
 /* collision detection stuff */
 typedef enum { P0=0, P1, M0, M1, BL, TOTAL_SPRITES, PF } SPRITE;
-int collision[160][TOTAL_SPRITES];
-
-/* Playfield */
-static unsigned char bg_color;
+static int collision[160][TOTAL_SPRITES];
 
 /*
  * AUXILIARY FUNCTIONS
@@ -107,6 +115,8 @@ EXPORT void dev_video_reset()
 	m0_size = 1;    m1_size = 1;
 	m0_enabled = 0; m1_enabled = 0;
 	m0_mov = 0;     m1_mov = 0;
+
+	pf_reflect = pf_score = pf_top = 0;
 
 	bg_color = 0;
 
@@ -280,6 +290,31 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data)
 			else
 				m1_mov = 0;
 			break;
+			
+		/*
+		 * Playfield registers
+		 */
+		case CTRLPF:
+			pf_reflect = (data & 0x1);
+			pf_score = (data & 0x2);
+			pf_top = (data & 0x4);
+			/* TODO - ball size */
+			break;
+
+		case PF0:
+			for(i=4; i<8; i++)
+				pf_graphics[i-4] = ((data & (1 << i)) != 0);
+			break;
+
+		case PF1:
+			for(i=0; i<8; i++)
+				pf_graphics[i+4] = ((data & (0x80 >> i)) != 0);
+			break;
+
+		case PF2:
+			for(i=0; i<8; i++)
+				pf_graphics[i+12] = ((data & (1 << i)) != 0);
+			break;
 
 		/*
 		 * Collision detection
@@ -306,6 +341,17 @@ inline void hline(SPRITE sprite, int x, int x2, int y, int color)
 	dev_video_draw_hline(x, x2, y, color);
 }
 
+inline void draw_playfield(int y)
+{
+	int i;
+	for(i=0; i<20; i++)
+		if(pf_graphics[i])
+			hline(PF, i*4, i*4+4, y, p0_color);
+	for(i=20; i<39; i++)
+		if(pf_graphics[pf_reflect ? 20 - (i-20) : (i-20)])
+			hline(PF, i*4, i*4+4, y, pf_score ? p1_color : p0_color);
+}
+
 /* Executes one step. Read the info on dev_video_sync_type above to understand
  * how this function works. [cycles] is the number of cycles that must be 
  * executed, and it'll be 0 if dev_video_sync_type is VERTICAL_SYNC. */
@@ -324,23 +370,13 @@ EXPORT void dev_video_step(int cycles)
 	/* draw background */
 	dev_video_draw_hline(0, 159, y(), bg_color);
 
-	/* draw missiles */
-	if(m0_enabled)
-		hline(M0, m0_pos, m0_pos+m0_size, y(), p0_color);
+	/* draw playfield */
+	if(!pf_top)
+		draw_playfield(y());
+
+	/* draw missile & player 1 */
 	if(m1_enabled)
 		hline(M1, m1_pos, m1_pos+m1_size, y(), p1_color);
-
-	/* draw players */
-	if(p0_enabled)
-	{
-		int i, x = p0_pos;
-		for(i=0; i<8; i++)
-		{
-			if(p0_graphics[p0_inverted ? i : 7-i])
-				hline(P0, x, x+p0_size, y(), p0_color);
-			x += p0_size;
-		}
-	}
 	if(p1_enabled)
 	{
 		int i, x = p1_pos;
@@ -351,6 +387,24 @@ EXPORT void dev_video_step(int cycles)
 			x += p1_size;
 		}
 	}
+
+	/* draw missile & player 0 */
+	if(m0_enabled)
+		hline(M0, m0_pos, m0_pos+m0_size, y(), p0_color);
+	if(p0_enabled)
+	{
+		int i, x = p0_pos;
+		for(i=0; i<8; i++)
+		{
+			if(p0_graphics[p0_inverted ? i : 7-i])
+				hline(P0, x, x+p0_size, y(), p0_color);
+			x += p0_size;
+		}
+	}
+
+	/* draw playfield */
+	if(pf_top)
+		draw_playfield(y());
 
 	/* check collisions */
 	for(i=0; i<160; i++)

@@ -107,8 +107,12 @@ static int colortable[256] =
 #define COLUP0	0x06
 #define COLUP1	0x07
 #define COLUBK	0x09
+#define CTRLPF  0x0a
 #define REFP0	0x0b
 #define REFP1	0x0c
+#define PF0	0x0d
+#define PF1	0x0e
+#define PF2	0x0f
 #define HMP0	0x20
 #define HMP1    0x21
 #define HMM0  	0x22

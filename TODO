@@ -1,3 +1,4 @@
+- next scanline button
 - add SDL events
 - capture segfaults
 - gettext support
