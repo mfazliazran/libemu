@@ -24,6 +24,7 @@ glong h_cycles = 0, v_cycles = 0, total_cycles = 0;
 
 /* Prototypes */
 static void cpu_run_pause_clicked(GtkButton* cpu_run_pause, gpointer data);
+void (*emu_cpu_reset_buf)();
 
 /* Debugger columns */
 enum
@@ -551,6 +552,16 @@ void emu_cpu_unset_breakpoint(unsigned long int pos)
 	} while(gtk_tree_model_iter_next(GTK_TREE_MODEL(store), &iter));
 }
 
+/* Resets the CPU */
+void emu_cpu_reset()
+{
+	if(cpu_loaded)
+	{
+		emu_cpu_reset_buf();
+		ip = emu_cpu_ip();
+	}
+}
+
 /* Initialize a new CPU, loading the filename (dll or shared object) */
 int emu_cpu_init(char* filename)
 {
@@ -625,7 +636,7 @@ int emu_cpu_init(char* filename)
 		g_error("variable dev_cpu_flag_value not defined in %s", path);
 	if(!g_module_symbol(cpu_mod, "dev_cpu_debug", (void*)&emu_cpu_debug))
 		g_error("variable dev_cpu_debug not defined in %s", path);
-	if(!g_module_symbol(cpu_mod, "dev_cpu_reset", (void*)&emu_cpu_reset))
+	if(!g_module_symbol(cpu_mod, "dev_cpu_reset", (void*)&emu_cpu_reset_buf))
 		g_error("variable dev_cpu_reset not defined in %s", path);
 	if(!g_module_symbol(cpu_mod, "dev_cpu_ip", (void*)&emu_cpu_ip))
 		g_error("variable dev_cpu_ip not defined in %s", path);
@@ -826,6 +837,7 @@ int emu_cpu_init(char* filename)
 	update_debugger(TRUE);
 
 	cpu_loaded = TRUE;
+	has_cpu = 1;
 
 	return CPU;
 }

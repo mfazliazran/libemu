@@ -73,7 +73,6 @@ int main(int argc, char** argv)
 	emu_joystick_init(joystick_event);
 
 	/* Start emulation */
-	emu_cpu_reset();
 	emu_main();
 
 	return 0;

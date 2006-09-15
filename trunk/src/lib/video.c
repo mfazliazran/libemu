@@ -347,6 +347,8 @@ int emu_video_init(char* filename, double video_cycles_per_cpu_cycle, int frames
 	fps = frames_per_second;
 	timer = g_timer_new();
 
+	has_video = 1;
+
 	emu_video_reset();
 
 	gtk_container_add(GTK_CONTAINER(video_window), table);

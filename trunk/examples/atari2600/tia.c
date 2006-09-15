@@ -62,6 +62,10 @@ static int m0_pos, m1_pos;
 static int m0_size, m1_size;
 static int m0_mov, m1_mov;
 
+/* collision detection stuff */
+typedef enum { P0=0, P1, M0, M1, BL, TOTAL_SPRITES, PF } SPRITE;
+int collision[160][TOTAL_SPRITES];
+
 /* Playfield */
 static unsigned char bg_color;
 
@@ -277,8 +281,29 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data)
 				m1_mov = 0;
 			break;
 
+		/*
+		 * Collision detection
+		 */
+		case CXCLR:
+			dev_mem_set_direct(CXM0P, 0x0);
+			dev_mem_set_direct(CXM1P, 0x0);
+			dev_mem_set_direct(CXP0FB, 0x0);
+			dev_mem_set_direct(CXP1FB, 0x0);
+			dev_mem_set_direct(CXM0FB, 0x0);
+			dev_mem_set_direct(CXM1FB, 0x0);
+			dev_mem_set_direct(CXBLPF, 0x0);
+			dev_mem_set_direct(CXPPMM, 0x0);
+			break;
 	}
 	return 0;
+}
+
+inline void hline(SPRITE sprite, int x, int x2, int y, int color)
+{
+	int i;
+	for(i=x; i<x2; i++)
+		collision[i][sprite] = 1;
+	dev_video_draw_hline(x, x2, y, color);
 }
 
 /* Executes one step. Read the info on dev_video_sync_type above to understand
@@ -286,17 +311,24 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data)
  * executed, and it'll be 0 if dev_video_sync_type is VERTICAL_SYNC. */
 EXPORT void dev_video_step(int cycles)
 {
+	int i, j;
+
 	if(y() < 0 || y() > dev_video_pixels_y)
 		return;
+
+	/* clear collision detection */
+	for(i=0; i<160; i++)
+		for(j=0; j<TOTAL_SPRITES; j++)
+			collision[i][j] = 0;
 
 	/* draw background */
 	dev_video_draw_hline(0, 159, y(), bg_color);
 
 	/* draw missiles */
 	if(m0_enabled)
-		dev_video_draw_hline(m0_pos, m0_pos+m0_size, y(), p0_color);
+		hline(M0, m0_pos, m0_pos+m0_size, y(), p0_color);
 	if(m1_enabled)
-		dev_video_draw_hline(m1_pos, m1_pos+m1_size, y(), p1_color);
+		hline(M1, m1_pos, m1_pos+m1_size, y(), p1_color);
 
 	/* draw players */
 	if(p0_enabled)
@@ -305,9 +337,37 @@ EXPORT void dev_video_step(int cycles)
 		for(i=0; i<8; i++)
 		{
 			if(p0_graphics[p0_inverted ? i : 7-i])
-				dev_video_draw_hline(x, x+p0_size, y(), p0_color);
+				hline(P0, x, x+p0_size, y(), p0_color);
 			x += p0_size;
 		}
+	}
+	if(p1_enabled)
+	{
+		int i, x = p1_pos;
+		for(i=0; i<8; i++)
+		{
+			if(p1_graphics[p1_inverted ? i : 7-i])
+				hline(P1, x, x+p1_size, y(), p1_color);
+			x += p1_size;
+		}
+	}
+
+	/* check collisions */
+	for(i=0; i<160; i++)
+	{
+		if(collision[i][M0] && collision[i][P1])
+			dev_mem_set_direct(CXM0P, dev_mem_get(CXM0P) | 0x80);
+		if(collision[i][M0] && collision[i][P0])
+			dev_mem_set_direct(CXM0P, dev_mem_get(CXM0P) | 0x40);
+		if(collision[i][M1] && collision[i][P0])
+			dev_mem_set_direct(CXM1P, dev_mem_get(CXM1P) | 0x80);
+		if(collision[i][M1] && collision[i][P1])
+			dev_mem_set_direct(CXM1P, dev_mem_get(CXM1P) | 0x40);
+
+		if(collision[i][P0] && collision[i][P1])
+			dev_mem_set_direct(CXPPMM, dev_mem_get(CXPPMM) | 0x80);
+		if(collision[i][M0] && collision[i][M1])
+			dev_mem_set_direct(CXPPMM, dev_mem_get(CXPPMM) | 0x40);
 	}
 }
 
