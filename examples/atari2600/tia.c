@@ -47,14 +47,20 @@ char tmp[1000];
  * LOCAL VARIABLES
  */
 
-/* Player 0 */
-static int p0_color;
+/* Player */
+static int p0_color, p1_color;		/* Player color */
+static int p0_enabled, p1_enabled;	/* If the player shoud be drawn */
+static int p0_pos, p1_pos;		/* Player horizontal position */
+static int p0_size, p1_size;		/* Player size (1..4) */
+static int p0_mov, p1_mov;		/* Player horizontal speed (-7..7) */
+static int p0_graphics[8], p1_graphics[8]; /* Player graphic, in bits */
+static int p0_inverted, p1_inverted;	/* If the player is drawn inverted */
 
-/* Missile 0 */
-static int m0_enabled;
-static int m0_pos;
-static int m0_size;
-static int m0_mov;
+/* Missile */
+static int m0_enabled, m1_enabled; 	/* see the player comments above */
+static int m0_pos, m1_pos;
+static int m0_size, m1_size;
+static int m0_mov, m1_mov;
 
 /* Playfield */
 static unsigned char bg_color;
@@ -83,12 +89,20 @@ EXPORT void dev_video_reset()
 				colortable[i] & 0xff,
 				(colortable[i] / 0x100) & 0xff,
 				(colortable[i] / 0x10000) & 0xff);	
-	p0_color = 0;
 
-	m0_pos = 80;
-	m0_size = 1;
-	m0_enabled = 0;
-	m0_mov = 0;
+	p0_color = 0;    p1_color = 0;
+	p0_pos = 80;     p1_pos = 80;
+	p0_size = 1;     p1_size = 1;
+	p0_enabled = 0;  p1_enabled = 0;
+	p0_mov = 0;      p1_mov = 0;
+	p0_inverted = 0; p1_inverted = 0;
+	for(i=0; i<8; i++)
+		p0_graphics[i] = p1_graphics[i] = 0;
+
+	m0_pos = 80;    m1_pos = 80;
+	m0_size = 1;    m1_size = 1;
+	m0_enabled = 0; m1_enabled = 0;
+	m0_mov = 0;     m1_mov = 0;
 
 	bg_color = 0;
 
@@ -106,15 +120,14 @@ EXPORT void dev_video_reset()
  *   if -1 is returned, the memory will be updated. */
 EXPORT int dev_video_memory_set(long pos, unsigned char data)
 {
-	/* The joystick registers are read/write... */
-	/*
-	if(pos >= INPT0 && pos <= INPT5)
-		return -1;
-	*/
+	int i, j;
+	int hmp0, hmp1, hmm0, hmm1;
 
-	/* ...but the other registers are read only */
 	switch(pos)
 	{
+		/*
+		 * Screen operations
+		 */
 		case VSYNC: /* Vertical sync */
 			if(data & 0x2)
 				dev_video_wait_vsync = -1;
@@ -128,32 +141,23 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data)
 			bg_color = data;
 			break;
 
-		case HMOVE: /* Horizontal movement of players and missiles */
-			m0_pos += m0_mov;
-			if (m0_pos >= 160)
-				m0_pos = 0;
-			else if (m0_pos < 0)
-				m0_pos = 159;
-			break;
-
-		case COLUP0:
+		/*
+		 * Player & Missile format
+		 */
+		case COLUP0: /* player 0 color */
 			p0_color = data;
 			break;
 
-		case HMM0: /* horizontal movement of missile 0 */
-			{
-				int hmm0 = data >> 4;
-				if(hmm0 >= 1 && hmm0 <= 7)
-					m0_mov = -hmm0;
-				else if(hmm0 >= 8 && hmm0 <= 15)
-					m0_mov = (16 - hmm0);
-				else
-					m0_mov = 0;
-			}
+		case COLUP1: /* player 1 color */
+			p1_color = data;
 			break;
 
 		case ENAM0: /* Enable missile 0 */
 			m0_enabled = (data & 0x2);
+			break;
+
+		case ENAM1: /* Enable missile 1 */
+			m1_enabled = (data & 0x2);
 			break;
 
 		case NUSIZ0: /* Player and missile 0 size */
@@ -165,6 +169,114 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data)
 				case 4: m0_size = 8; break;
 			}
 			break;
+
+		case NUSIZ1: /* Player and missile 1 size */
+			switch((data & 0x30) >> 4)
+			{
+				case 0: m1_size = 1; break;
+				case 1: m1_size = 2; break;
+				case 2: m1_size = 4; break;
+				case 4: m1_size = 8; break;
+			}
+			break;
+
+		case REFP0: /* invert image (reflect) player 0 */
+			p0_inverted = (data & 0x8);
+			break;
+
+		case REFP1: /* invert image (reflect) player 1 */
+			p1_inverted = (data & 0x8);
+			break;
+
+		case GRP0: /* Player 0 graphics */
+			j = 0;
+			for(i=0; i<8; i++)
+			{
+				p0_graphics[i] = ((data & (1 << i)) != 0);
+				j += p0_graphics[i];
+			}
+			p0_enabled = (j>0);
+			break;
+
+		case GRP1: /* Player 1 graphics */
+			j = 0;
+			for(i=0; i<8; i++)
+			{
+				p1_graphics[i] = ((data & (1 << i)) != 0);
+				j += p1_graphics[i];
+			}
+			p1_enabled = (j>0);
+			break;
+
+		/*
+		 * Player & Missile movement
+		 */
+		case HMOVE: /* request horizontal movement of players,
+			       missiles and ball */
+			m0_pos += m0_mov;
+			m1_pos += m1_mov;
+			p0_pos += p0_mov;
+			p1_pos += p1_mov;
+
+			/* verify if they're falling out of the screen */
+			if (m0_pos >= 160)
+				m0_pos = 0;
+			else if (m0_pos < 0)
+				m0_pos = 159;
+			if (m1_pos >= 160)
+				m1_pos = 0;
+			else if (m1_pos < 0)
+				m1_pos = 159;
+			if (p0_pos >= 160)
+				p0_pos = 0;
+			else if (p0_pos < 0)
+				p0_pos = 159;
+			if (p1_pos >= 160)
+				p1_pos = 0;
+			else if (p1_pos < 0)
+				p1_pos = 159;
+			break;
+
+		case HMP0: /* horizontal movement of player 0 */
+			hmp0 = data >> 4;
+			if(hmp0 >= 1 && hmp0 <= 7)
+				p0_mov = -hmp0;
+			else if(hmp0 >= 8 && hmp0 <= 15)
+				p0_mov = (16 - hmp0);
+			else
+				p0_mov = 0;
+			break;
+
+		case HMP1: /* horizontal movement of player 1 */
+			hmp1 = data >> 4;
+			if(hmp1 >= 1 && hmp1 <= 7)
+				p1_mov = -hmp1;
+			else if(hmp1 >= 8 && hmp1 <= 15)
+				p1_mov = (16 - hmp1);
+			else
+				p1_mov = 0;
+			break;
+
+		case HMM0: /* horizontal movement of missile 0 */
+			hmm0 = data >> 4;
+			if(hmm0 >= 1 && hmm0 <= 7)
+				m0_mov = -hmm0;
+			else if(hmm0 >= 8 && hmm0 <= 15)
+				m0_mov = (16 - hmm0);
+			else
+				m0_mov = 0;
+			break;
+
+		case HMM1: /* horizontal movement of missile 1 */
+			hmm1 = data >> 4;
+			if(hmm1 >= 1 && hmm1 <= 7)
+				m1_mov = -hmm1;
+			else if(hmm1 >= 8 && hmm1 <= 15)
+				m1_mov = (16 - hmm1);
+			else
+				m1_mov = 0;
+			break;
+
 	}
 	return 0;
 }
@@ -183,6 +295,20 @@ EXPORT void dev_video_step(int cycles)
 	/* draw missiles */
 	if(m0_enabled)
 		dev_video_draw_hline(m0_pos, m0_pos+m0_size, y(), p0_color);
+	if(m1_enabled)
+		dev_video_draw_hline(m1_pos, m1_pos+m1_size, y(), p1_color);
+
+	/* draw players */
+	if(p0_enabled)
+	{
+		int i, x = p0_pos;
+		for(i=0; i<8; i++)
+		{
+			if(p0_graphics[p0_inverted ? i : 7-i])
+				dev_video_draw_hline(x, x+p0_size, y(), p0_color);
+			x += p0_size;
+		}
+	}
 }
 
 /* The following functions (inside the DEBUG directive) are used only by the
@@ -207,6 +333,8 @@ EXPORT char* dev_video_debug_name(int n)
 		case 1: return "Y";
 		case 2: return "INPT4";
 		case 3: return "BG Color";
+		case 4: return "m1_enabled";
+		case 5: return "p1_color";
 		default: return NULL;
 	}
 }
@@ -232,6 +360,12 @@ EXPORT char* dev_video_debug(int n)
 			break;
 		case 3:
 			sprintf(info, "0x%02x", bg_color);
+			break;
+		case 4:
+			sprintf(info, "0x%02x", m1_enabled);
+			break;
+		case 5:
+			sprintf(info, "0x%02x", p1_color);
 			break;
 		default:
 			return NULL;
