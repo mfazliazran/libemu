@@ -20,6 +20,7 @@ void emu_error(char* message);
 
 /* CPU functions */
 int emu_cpu_init(char* filename);
+void emu_cpu_reset();
 void emu_cpu_run();
 void emu_cpu_pause();
 void emu_cpu_set_breakpoint(unsigned long int pos, int one_time_only);
@@ -32,7 +33,6 @@ unsigned int (*emu_cpu_register_value)(int n);
 char* (*emu_cpu_flag_name)(int n);
 unsigned char (*emu_cpu_flag_value)(int n);
 char* (*emu_cpu_debug)(unsigned long addr, int* num_cycles, int* bytes);
-void (*emu_cpu_reset)();
 unsigned long int (*emu_cpu_ip)();
 int (*emu_cpu_step)(int* cycles);
 
