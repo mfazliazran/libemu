@@ -48,7 +48,7 @@ char tmp[1000];
  */
 
 /* Player */
-static int p0_color, p1_color;		/* Player color */
+static unsigned char p0_color, p1_color;/* Player color */
 static int p0_enabled, p1_enabled;	/* If the player shoud be drawn */
 static int p0_pos, p1_pos;		/* Player horizontal position */
 static int p0_size, p1_size;		/* Player size (1..4) */
@@ -63,6 +63,7 @@ static int m0_size, m1_size;
 static int m0_mov, m1_mov;
 
 /* Playfield */
+static unsigned char pf_color;
 static int pf_reflect; 	/* if the playfiled will be reflected in the right
 			   side of the screen */
 static int pf_score;	/* if set, the left pf is the color of P0, and the
@@ -81,8 +82,8 @@ static int collision[160][TOTAL_SPRITES];
  * AUXILIARY FUNCTIONS
  */
 
-static inline int x() { return dev_video_pos_x - 68; }
-static inline int y() { return dev_video_pos_y - 40; }
+int x() { return (dev_video_pos_x - 68); }
+int y() { return (dev_video_pos_y - 40); }
 
 /*
  * STANDARD FUNCTIONS
@@ -294,6 +295,10 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data)
 		/*
 		 * Playfield registers
 		 */
+		case COLUPF:
+			pf_color = data;
+			break;
+
 		case CTRLPF:
 			pf_reflect = (data & 0x1);
 			pf_score = (data & 0x2);
@@ -333,23 +338,23 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data)
 	return 0;
 }
 
-inline void hline(SPRITE sprite, int x, int x2, int y, int color)
+inline void drln(SPRITE sprite, int x, int x2, int color)
 {
 	int i;
 	for(i=x; i<x2; i++)
 		collision[i][sprite] = 1;
-	dev_video_draw_hline(x, x2, y, color);
+	dev_video_draw_hline(x, x2, y(), color);
 }
 
-inline void draw_playfield(int y)
+inline void draw_playfield()
 {
 	int i;
 	for(i=0; i<20; i++)
 		if(pf_graphics[i])
-			hline(PF, i*4, i*4+4, y, p0_color);
+			drln(PF, i*4, i*4+4, pf_score ? p0_color : pf_color);
 	for(i=20; i<39; i++)
 		if(pf_graphics[pf_reflect ? 20 - (i-20) : (i-20)])
-			hline(PF, i*4, i*4+4, y, pf_score ? p1_color : p0_color);
+			drln(PF, i*4, i*4+4, pf_score ? p1_color : pf_color);
 }
 
 /* Executes one step. Read the info on dev_video_sync_type above to understand
@@ -372,39 +377,39 @@ EXPORT void dev_video_step(int cycles)
 
 	/* draw playfield */
 	if(!pf_top)
-		draw_playfield(y());
+		draw_playfield();
 
 	/* draw missile & player 1 */
 	if(m1_enabled)
-		hline(M1, m1_pos, m1_pos+m1_size, y(), p1_color);
+		drln(M1, m1_pos, m1_pos+m1_size, p1_color);
 	if(p1_enabled)
 	{
 		int i, x = p1_pos;
 		for(i=0; i<8; i++)
 		{
 			if(p1_graphics[p1_inverted ? i : 7-i])
-				hline(P1, x, x+p1_size, y(), p1_color);
+				drln(P1, x, x+p1_size, p1_color);
 			x += p1_size;
 		}
 	}
 
 	/* draw missile & player 0 */
 	if(m0_enabled)
-		hline(M0, m0_pos, m0_pos+m0_size, y(), p0_color);
+		drln(M0, m0_pos, m0_pos+m0_size, p0_color);
 	if(p0_enabled)
 	{
 		int i, x = p0_pos;
 		for(i=0; i<8; i++)
 		{
 			if(p0_graphics[p0_inverted ? i : 7-i])
-				hline(P0, x, x+p0_size, y(), p0_color);
+				drln(P0, x, x+p0_size, p0_color);
 			x += p0_size;
 		}
 	}
 
 	/* draw playfield */
 	if(pf_top)
-		draw_playfield(y());
+		draw_playfield();
 
 	/* check collisions */
 	for(i=0; i<160; i++)
@@ -436,15 +441,15 @@ char info[100];
 /* You must implement this function.
  *
  * This function will return the register names. For example, if your device
- * has two registers, X and Y, when n == 0, the function would return "X", and
- * when n == 1, it would return "Y". The funcion must return NULL for every 
+ * has two registers, x() and y(), when n == 0, the function would return "x()", and
+ * when n == 1, it would return "y()". The funcion must return NULL for every 
  * other value of n. */
 EXPORT char* dev_video_debug_name(int n)
 {
 	switch(n)
 	{
-		case 0:	return "X";
-		case 1: return "Y";
+		case 0:	return "x()";
+		case 1: return "y()";
 		case 2: return "INPT4";
 		case 3: return "BG Color";
 		case 4: return "m1_enabled";
@@ -456,8 +461,8 @@ EXPORT char* dev_video_debug_name(int n)
 /* You must implement this function.
  *
  * This function will return the register values. For example, if your device
- * has two registers, X and Y, when n == 0, the function would return the value 
- * in X, and when n == 1, it would return the value in Y. The value of the 
+ * has two registers, x() and y(), when n == 0, the function would return the value 
+ * in x(), and when n == 1, it would return the value in y(). The value of the 
  * register n must match the register n passed on the function register_name. */
 EXPORT char* dev_video_debug(int n)
 {

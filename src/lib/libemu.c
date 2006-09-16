@@ -117,6 +117,9 @@ void emu_init(const char* name, int argc, char** argv)
 void emu_main()
 {
 	gtk_widget_show_all(window);
+#ifdef __linux__
+	g_thread_init(NULL);
+#endif
 	gtk_main();
 }
 
