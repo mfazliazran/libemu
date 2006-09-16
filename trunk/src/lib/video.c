@@ -1,5 +1,5 @@
-#include "SDL.h"
 #include <string.h>
+#include "SDL.h"
 #include "libemu.h"
 #include "other.h"
 
@@ -23,8 +23,9 @@ static double time_busy = 0.0f;
  */
 
 /* get a event from SDL */
-static int FilterEvents(const SDL_Event *e)
+int *FilterEvents(const SDL_Event *e)
 {
+	emu_message("event");
 	switch(e->type)
 	{
 		case SDL_QUIT:
@@ -47,6 +48,17 @@ static int FilterEvents(const SDL_Event *e)
 	return 1;
 }
 
+//static gpointer sdl_thread(gpointer data)
+static int sdl_thread(void* data)
+{
+	SDL_Event e;
+
+	while(SDL_WasInit(SDL_INIT_VIDEO))
+		if(SDL_PollEvent(&e))
+			FilterEvents(&e);
+	return 0;
+}
+
 /*
  * EVENT HANDLERS
  */
@@ -62,7 +74,12 @@ static void monitor_show_hide(GtkToggleButton *item, gpointer data)
 		if(!screen)
 			g_error("A SDL_Screen could not be created (%s)", SDL_GetError());
 		SDL_WM_SetCaption("Monitor", "Monitor");
+#ifdef __linux__
+		//g_thread_create_full(&sdl_thread, NULL, FALSE, NULL);
+		//SDL_CreateThread(sdl_thread, NULL);
+//#else
 		SDL_SetEventFilter(FilterEvents);
+#endif
 		emu_video_update_screen();
 	}
 	else
@@ -113,18 +130,23 @@ void video_update()
 /* Create a new color palette */
 void emu_video_create_palette(int n_colors)
 {
-	color = g_malloc(sizeof(SDL_Color) * n_colors);
 	number_of_colors = n_colors;
+
+	// extra
+	color = g_malloc(sizeof(SDL_Color) * n_colors);
 }
 
 /* Set a color on the color palette */
 void emu_video_palette_set_color(int n_color, int r, int g, int b)
 {
+	SDL_Color *c;
+
 	if(!SDL_WasInit(SDL_INIT_VIDEO))
 		return;
-	SDL_Color *c = g_malloc(sizeof(SDL_Color));
+
 	if(n_color > number_of_colors)
 		emu_error("Color number higher than number of colors in the palette!");
+	c = g_malloc(sizeof(SDL_Color));
 	c->r = r;
 	c->g = g;
 	c->b = b;
@@ -150,6 +172,7 @@ void emu_video_draw_pixel(int x, int y, long palette_color)
 /* Draw a horizontal line on the screen */
 void emu_video_draw_hline(int x1, int x2, int y, long palette_color)
 {
+	SDL_Rect r;
 	Uint8 *p;
 	int x;
 
@@ -158,6 +181,7 @@ void emu_video_draw_hline(int x1, int x2, int y, long palette_color)
 	if(y < 0 || y >= *emu_video_pixels_y)
 		return;
 
+	
 	SDL_LockSurface(buffer);
 	p = (Uint8*)buffer->pixels + y * buffer->pitch;
 	for(x=x1; x<x2; x++)
@@ -184,6 +208,8 @@ void emu_video_update_screen()
 	frame_count++;
 	if(frame_count >= fps)
 	{
+		if(time_busy > 1)
+			time_busy = 1;
 		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(usage_bar),
 				time_busy);
 		frame_count = 0;
@@ -349,7 +375,9 @@ int emu_video_init(char* filename, double video_cycles_per_cpu_cycle, int frames
 
 	has_video = 1;
 
+	SDL_InitSubSystem(SDL_INIT_VIDEO);
 	emu_video_reset();
+	SDL_QuitSubSystem(SDL_INIT_VIDEO);
 
 	gtk_container_add(GTK_CONTAINER(video_window), table);
 	gtk_widget_show_all(table);
