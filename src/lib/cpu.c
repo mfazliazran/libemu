@@ -1,4 +1,5 @@
 #include <string.h>
+#include "SDL.h"
 #include "libemu.h"
 #include "other.h"
 
@@ -392,6 +393,22 @@ void emu_cpu_run()
 	g_idle_add_full(G_PRIORITY_HIGH, run, NULL, NULL);
 }
 
+#ifdef __linux__
+static gboolean sdl_events_thread(gpointer data)
+{
+	SDL_Event e;
+	if(!running)
+	{
+		while(SDL_PollEvent(&e))
+			if(e.type == SDL_QUIT)
+				gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(monitor), FALSE);
+		return TRUE;
+	} 
+	else
+		return FALSE;
+}
+#endif
+
 /* Pauses the execution */
 void emu_cpu_pause()
 {
@@ -407,6 +424,9 @@ void emu_cpu_pause()
 	g_signal_handler_block(pause, pause_signal);
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(pause), TRUE);
 	g_signal_handler_unblock(pause, pause_signal);
+#ifdef __linux__
+	g_timeout_add(200, sdl_events_thread, NULL);
+#endif
 }
 
 /* Return the reference number */

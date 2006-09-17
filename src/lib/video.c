@@ -6,7 +6,7 @@
 #define MAX_REGISTERS 255
 #define MAX_VERTICAL 12
 
-static GtkWidget *video_window, *monitor;
+static GtkWidget *video_window;
 static GtkWidget *video_register[MAX_REGISTERS];
 static gint num_registers;
 static gboolean video_loaded = FALSE;
@@ -23,9 +23,8 @@ static double time_busy = 0.0f;
  */
 
 /* get a event from SDL */
-int *FilterEvents(const SDL_Event *e)
+static int FilterEvents(const SDL_Event *e)
 {
-	emu_message("event");
 	switch(e->type)
 	{
 		case SDL_QUIT:
@@ -48,15 +47,14 @@ int *FilterEvents(const SDL_Event *e)
 	return 1;
 }
 
-//static gpointer sdl_thread(gpointer data)
-static int sdl_thread(void* data)
+/* do SDL events */
+static void do_events()
 {
 	SDL_Event e;
 
-	while(SDL_WasInit(SDL_INIT_VIDEO))
-		if(SDL_PollEvent(&e))
+	if(SDL_WasInit(SDL_INIT_VIDEO))
+		while(SDL_PollEvent(&e))
 			FilterEvents(&e);
-	return 0;
 }
 
 /*
@@ -74,10 +72,7 @@ static void monitor_show_hide(GtkToggleButton *item, gpointer data)
 		if(!screen)
 			g_error("A SDL_Screen could not be created (%s)", SDL_GetError());
 		SDL_WM_SetCaption("Monitor", "Monitor");
-#ifdef __linux__
-		//g_thread_create_full(&sdl_thread, NULL, FALSE, NULL);
-		//SDL_CreateThread(sdl_thread, NULL);
-//#else
+#ifndef __linux__
 		SDL_SetEventFilter(FilterEvents);
 #endif
 		emu_video_update_screen();
@@ -215,6 +210,11 @@ void emu_video_update_screen()
 		frame_count = 0;
 		time_busy = 0.0f;
 	}
+
+#ifdef __linux__
+	/* check for sdl events */
+	do_events();
+#endif
 }
 
 /* Create a new video device, and return its number */
@@ -351,10 +351,6 @@ int emu_video_init(char* filename, double video_cycles_per_cpu_cycle, int frames
 		i++;
 	}
 	num_registers = i;
-
-#ifdef __linux__
-	//putenv("SDL_VIDEODRIVER=dga");
-#endif
 
 	/* Initialize video (SDL) */
 	if(SDL_Init(SDL_INIT_VIDEO) == -1)
