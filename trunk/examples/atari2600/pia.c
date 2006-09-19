@@ -61,6 +61,9 @@ EXPORT void dev_generic_reset()
  * executed, and it'll be 0 if dev_generic_sync_type is VERTICAL_SYNC. */
 EXPORT void dev_generic_step(int cycles)
 {
+	timer -= cycles;
+	dev_mem_set_direct(INTIM, (int)(timer >> interval));
+	/*
 	if(interval > 0)
 	{
 		timer -= cycles;
@@ -68,7 +71,7 @@ EXPORT void dev_generic_step(int cycles)
 		{
 			second_pass = 1;
 			interval = 1;
-			timer = 255; /* FIXME */
+			timer = 255; // FIXME
 		}
 		else if(timer <= 0 && second_pass)
 		{
@@ -77,10 +80,12 @@ EXPORT void dev_generic_step(int cycles)
 			second_pass = 0;
 		}
 		if(interval > 0)
-			dev_mem_set_direct(INTIM, (int)((timer + interval - 1)/interval));
+			//dev_mem_set_direct(INTIM, (int)((timer + interval - 1)/interval));
+			dev_mem_set_direct(INTIM, (int)(timer >> 6));
 		else
 			dev_mem_set_direct(INTIM, 0);
 	}
+	*/
 }
 
 /* You must implement this function.
@@ -95,10 +100,24 @@ EXPORT int dev_generic_memory_set(long pos, unsigned char data)
 {
 	switch(pos)
 	{
+		case TIM1T:
+			interval = 0;
+			timer = data << interval;
+			dev_mem_set_direct(INTIM, data);
+			return 0;
+		case TIM8T:
+			interval = 3;
+			timer = data << interval;
+			dev_mem_set_direct(INTIM, data);
+			return 0;
 		case TIM64T:
-			interval = 64;
-			timer = data * 64;
-			second_pass = 0;
+			interval = 6;
+			timer = data << interval;
+			dev_mem_set_direct(INTIM, data);
+			return 0;
+		case T1024T:
+			interval = 10;
+			timer = data << interval;
 			dev_mem_set_direct(INTIM, data);
 			return 0;
 	}
