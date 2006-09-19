@@ -527,7 +527,7 @@ again:
 			case 0x4E: /* LSR */
 			case 0x2E: /* ROL */
 			case 0x6E: /* ROR */
-				dcycles = 2; /* 6 cycles */
+				dcycles += 2; /* 6 cycles */
 			case 0x6D: /* ADC */
 			case 0x2D: /* AND */
 			case 0x2C: /* BIT */
@@ -535,7 +535,6 @@ again:
 			case 0xEC: /* CPX */
 			case 0xCC: /* CPY */
 			case 0x40: /* EOR */
-			case 0x4C: /* JMP */
 			case 0xAD: /* LDA */
 			case 0xAE: /* LDX */
 			case 0xAC: /* LDY */
@@ -544,7 +543,9 @@ again:
 			case 0x8D: /* STA */
 			case 0x8E: /* STX */
 			case 0x8C: /* STY */
-				dcycles = 4; /* 4 cycles */
+				dcycles += 1; /* 4 cycles */
+			case 0x4C: /* JMP */
+				dcycles += 3; /* 3 cycles */
 				sprintf(debug_par, "$%04x", FULL(lsrc,hsrc));
 				break;
 
@@ -1310,7 +1311,6 @@ again:
 			case 0xEC: /* CPX */
 			case 0xCC: /* CPY */
 			case 0x40: /* EOR */
-			case 0x4C: /* JMP */
 			case 0xAD: /* LDA */
 			case 0xAE: /* LDX */
 			case 0xAC: /* LDY */
@@ -1319,7 +1319,9 @@ again:
 			case 0x8D: /* STA */
 			case 0x8E: /* STX */
 			case 0x8C: /* STY */
-				cycles = 4; /* 4 cycles */
+				cycles += 1; /* 4 cycles */
+			case 0x4C: /* JMP */
+				cycles += 3; /* 3 cycles */
 				address = FULL(lsrc,hsrc);
 				src = dev_mem_get(address);
 				break;

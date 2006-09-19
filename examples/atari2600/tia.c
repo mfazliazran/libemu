@@ -291,7 +291,23 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data)
 			else
 				m1_mov = 0;
 			break;
-			
+
+		case RESP0: /* reset player 0 */
+			p0_pos = dev_video_pos_x;
+			break;
+
+		case RESP1: /* reset player 1 */
+			p1_pos = dev_video_pos_x;
+			break;
+
+		case RESM0: /* reset missile 0 */
+			m0_pos = dev_video_pos_x;
+			break;
+
+		case RESM1: /* reset missile 1 */
+			m1_pos = dev_video_pos_x;
+			break;
+
 		/*
 		 * Playfield registers
 		 */
