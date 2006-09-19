@@ -292,6 +292,14 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data)
 				m1_mov = 0;
 			break;
 
+		case HMCLR: /* horizontal movement clear */
+			p0_mov = 0;
+			p1_mov = 0;
+			m0_mov = 0;
+			m1_mov = 0; 
+			/* TODO - bl_mov = 0; */
+			break;
+
 		case RESP0: /* reset player 0 */
 			p0_pos = dev_video_pos_x;
 			break;
