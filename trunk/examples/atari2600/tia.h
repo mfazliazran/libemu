@@ -135,6 +135,7 @@ static int colortable[256] =
 #define RESMP0	0x28
 #define RESMP1	0x29
 #define HMOVE	0x2a
+#define HMCLR   0x2b
 #define CXCLR	0x2c
 
 /* Registers (reading) */

@@ -42,6 +42,25 @@ static int FilterEvents(const SDL_Event *e)
 				gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(joy_button[0][LEFT]), e->key.state == SDL_PRESSED ? TRUE : FALSE);
 			if(e->key.keysym.sym == SDLK_z)
 				gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(joy_button[0][B0]), e->key.state == SDL_PRESSED ? TRUE : FALSE);
+			if(e->key.keysym.sym == SDLK_x)
+				gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(joy_button[0][B1]), e->key.state == SDL_PRESSED ? TRUE : FALSE);
+			if(e->key.keysym.sym == SDLK_c)
+				gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(joy_button[0][B2]), e->key.state == SDL_PRESSED ? TRUE : FALSE);
+			if(e->key.keysym.sym == SDLK_v)
+				gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(joy_button[0][B3]), e->key.state == SDL_PRESSED ? TRUE : FALSE);
+			if(e->key.keysym.sym == SDLK_b)
+				gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(joy_button[0][B4]), e->key.state == SDL_PRESSED ? TRUE : FALSE);
+			if(e->key.keysym.sym == SDLK_a)
+				gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(joy_button[0][B5]), e->key.state == SDL_PRESSED ? TRUE : FALSE);
+			if(e->key.keysym.sym == SDLK_s)
+				gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(joy_button[0][B6]), e->key.state == SDL_PRESSED ? TRUE : FALSE);
+			if(e->key.keysym.sym == SDLK_d)
+				gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(joy_button[0][B7]), e->key.state == SDL_PRESSED ? TRUE : FALSE);
+			if(e->key.keysym.sym == SDLK_f)
+				gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(joy_button[0][B8]), e->key.state == SDL_PRESSED ? TRUE : FALSE);
+			if(e->key.keysym.sym == SDLK_g)
+				gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(joy_button[0][B9]), e->key.state == SDL_PRESSED ? TRUE : FALSE);
+			/* TODO - switches */
 			break;
 	}
 	return 1;

@@ -54,6 +54,8 @@ EXPORT void dev_generic_reset()
 	/* Set SWCHA to 0xff, since each bit holds the value of 1 when
 	 * the joystick isn't being pressed to any direction */
 	dev_mem_set_direct(SWCHA, 0xff);
+	//dev_mem_set_direct(SWCHB, 0x0b);
+	dev_mem_set_direct(SWCHB, 0xff);
 }
 
 /* Executes one step. Read the info on dev_generic_sync_type above to understand
