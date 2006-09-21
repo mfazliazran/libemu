@@ -10,7 +10,7 @@ Start
 	sta WSYNC
 	sta WSYNC
 
-	lda #2      ;timer
+	lda #3      ;timer
 	sta TIM64T
 
 aha
