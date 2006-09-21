@@ -376,8 +376,8 @@ inline void draw_playfield()
 	for(i=0; i<20; i++)
 		if(pf_graphics[i])
 			drln(PF, i*4, i*4+4, pf_score ? p0_color : pf_color);
-	for(i=20; i<39; i++)
-		if(pf_graphics[pf_reflect ? 20 - (i-20) : (i-20)])
+	for(i=20; i<40; i++)
+		if(pf_graphics[pf_reflect ? 19 - (i-20) : (i-20)])
 			drln(PF, i*4, i*4+4, pf_score ? p1_color : pf_color);
 }
 

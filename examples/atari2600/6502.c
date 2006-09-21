@@ -290,6 +290,7 @@ again:
 				case 0xB4:
 				case 0x46: /* LSR */
 				case 0x56:
+				case 0x04: /* NOP - undocumented */
 				case 0x09: /* ORA */
 				case 0x05:
 				case 0x15:
@@ -446,6 +447,8 @@ again:
 
 			/* Immediate: it'll pass an absoulte number
 			 * as a parameter. */
+			case 0x04: /* NOP - undocumented! */
+				dcycles = 1;
 			case 0x69: /* ADC */
 			case 0x29: /* AND */
 			case 0xC9: /* CMP */
@@ -457,7 +460,7 @@ again:
 			case 0xA0: /* LDY */
 			case 0x09: /* ORA */
 			case 0xE9: /* SBC */
-				dcycles = 2;
+				dcycles += 2;
 				sprintf(debug_par, "#$%02x", lsrc);
 				break;
 
@@ -810,6 +813,7 @@ again:
 			case 0x5E:
 				debug_opcode = "LSR";
 				break;
+			case 0x04:
 			case 0xEA:
 				debug_opcode = "NOP";
 				break;
@@ -1058,6 +1062,7 @@ again:
 				case 0xB4:
 				case 0x46: /* LSR */
 				case 0x56:
+				case 0x04: /* NOP */
 				case 0x09: /* ORA */
 				case 0x05:
 				case 0x15:
@@ -1219,6 +1224,8 @@ again:
 
 			/* Immediate: it'll pass an absoulte number
 			 * as a parameter. */
+			case 0x04: /* NOP */
+				cycles = 1;
 			case 0x69: /* ADC */
 			case 0x29: /* AND */
 			case 0xC9: /* CMP */
@@ -1230,7 +1237,7 @@ again:
 			case 0xA0: /* LDY */
 			case 0x09: /* ORA */
 			case 0xE9: /* SBC */
-				cycles = 2;
+				cycles += 2;
 				src = FULL(lsrc,0);
 				break;
 
@@ -1824,6 +1831,7 @@ again:
 			 * NOP *  -> No operation
 			 *******/
 			case 0xEA:
+			case 0x04:
 				/* do nothing */
 				break;
 
