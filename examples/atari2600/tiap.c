@@ -57,8 +57,19 @@ typedef enum
 	PLAYFIELD,
 	PLAYER_0,
 	PLAYER_1,
+	MISSILE_0,
+	MISSILE_1,
+	BALL,
 	NUM_TYPES
 } TYPE;
+
+typedef struct
+{
+	unsigned long pos;
+	unsigned char data;
+	int cycles;
+} DATASET;
+DATASET dataset, dataset2;
 
 /* synchronization */
 static int vsync, vblank;
@@ -81,6 +92,21 @@ static int p_size[2];
 static int p_reflect[2];
 static int p_grp[2];
 static int p_graphic[2][72];
+
+/* missiles */
+static int m_pos[2];
+static int m_mov[2];
+static int m_size[2];
+static int m_enabled[2];
+static int m_lock[2];
+static int m_graphic[2][8];
+
+/* ball */
+static int b_pos;
+static int b_mov;
+static int b_size;
+static int b_enabled;
+static int b_graphic[8];
 
 /* collision */
 static unsigned char pixel[20];
@@ -136,7 +162,22 @@ EXPORT void dev_video_reset()
 		p_reflect[i] = 0;
 		for(j=0; j<72; j++)
 			p_graphic[i][j] = 0;
+		m_pos[i] = 80;
+		m_mov[i] = 0;
+		m_size[i] = 1;
+		m_enabled[i] = 0;
+		m_lock[i] = 0;
+		m_graphic[i][0] = 1;
+		for(j=1; j<8; j++)
+			m_graphic[i][j] = 0;
 	}
+	b_pos = 80;
+	b_mov = 0;
+	b_size = 1;
+	b_enabled = 0;
+	b_graphic[0] = 1;
+	for(j=1; j<8; j++)
+		b_graphic[j] = 0;
 }
 
 inline void redraw_player(int p)
@@ -204,6 +245,44 @@ inline void redraw_player(int p)
 	}
 }
 
+inline void redraw_missile(int m)
+{
+	int i;
+	
+	for(i=1; i<8; i++)
+		m_graphic[m][i] = 0;
+
+	switch(m_size[m])
+	{
+		case 2: m_graphic[m][1] = 1;
+		case 3: m_graphic[m][2] = 1;
+			m_graphic[m][3] = 1;
+		case 4: m_graphic[m][4] = 1;
+			m_graphic[m][5] = 1;
+			m_graphic[m][6] = 1;
+			m_graphic[m][7] = 1;
+	}
+}
+
+inline void redraw_ball()
+{
+	int i;
+	
+	for(i=1; i<8; i++)
+		b_graphic[i] = 0;
+
+	switch(b_size)
+	{
+		case 2: b_graphic[1] = 1;
+		case 3: b_graphic[2] = 1;
+			b_graphic[3] = 1;
+		case 4: b_graphic[4] = 1;
+			b_graphic[5] = 1;
+			b_graphic[6] = 1;
+			b_graphic[7] = 1;
+	}
+}
+
 /* You must implement this function.
  *  
  * This function will be executed every time data is saved into a memory 
@@ -212,7 +291,7 @@ inline void redraw_player(int p)
  * Return value: 
  *   if  0 is returned, the memory will not be updated; 
  *   if -1 is returned, the memory will be updated. */
-EXPORT int dev_video_memory_set(long pos, unsigned char data)
+EXPORT int dev_video_memory_set(long pos, unsigned char data, int cycles)
 {
 	int i;
 
@@ -236,99 +315,19 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data)
 			dev_video_wait_hsync = -1;
 			break;
 
-		/*
-		 * BACKGROUND
-		 */
-		case COLUBK: /* Background color */
-			bg_color = data;
-			break;
-
-		/*
-		 * PLAYFIELD
-		 */
-		case COLUPF: /* Playfield color */
-			pf_color = data;
-			break;
-
-		case CTRLPF: /* Control playfield */
-			pf_reflect = data & 0x1;
-			pf_score = data & 0x2;
-			pf_priority = data & 0x4;
-			/* todo - ball size */
-			break;
-
-		case PF0: /* Playfield graphics 0 */
-			for(i=4; i<8; i++)
-				pf[i-4] = (data & (1 << i)) >> i;
-			break;
-
-		case PF1: /* Playfield graphics 1 */
-			for(i=0; i<8; i++)
-				pf[i+4] = (data & (0x80 >> i)) != 0;
-			break;
-
-		case PF2: /* Playfield graphics 2 */
-			for(i=0; i<8; i++)
-				pf[i+12] = (data & (1 << i)) >> i;
-			break;
-
-		/*
-		 * PLAYER APPEARENCE
-		 */
-		case COLUP0:
-			p_color[0] = data;
-			break;
-
-		case COLUP1:
-			p_color[1] = data;
-			break;
-
-		case GRP0:
-			p_grp[0] = data;
-			redraw_player(0);
-			break;
-
-		case GRP1:
-			p_grp[1] = data;
-			redraw_player(1);
-			break;
-
-		case NUSIZ0:
-			p_size[0] = data & 0x7;
-			redraw_player(0);
-			break;
-
-		case NUSIZ1:
-			p_size[1] = data & 0x7;
-			redraw_player(1);
-			break;
-
-		case REFP0:
-			p_reflect[0] = (data & 0x8) != 0;
-			redraw_player(0);
-			break;
-
-		case REFP1:
-			p_reflect[1] = (data & 0x8) != 0;
-			redraw_player(1);
-			break;
-
 		/* 
 		 * PLAYER POSITION
 		 */
 		case RESP0: /* Reset player 0 */
-			/* where did I got these numbers from??? */
-			if(x() < 0)
+			p_pos[0] = x_right(x() + cycles + 5);
+			if(p_pos[0] < 3)
 				p_pos[0] = 3;
-			else
-				p_pos[0] = x_left(x() + 14) + 3;
 			break;
 
 		case RESP1: /* Reset player 1 */
-			if(x() < 0)
+			p_pos[1] = x_right(x() + cycles + 5);
+			if(p_pos[1] < 3)
 				p_pos[1] = 3;
-			else
-				p_pos[1] = x_left(x() + 14) + 3;
 			break;
 
 		case HMP0: /* Horizontal movement of player 1 */
@@ -355,26 +354,240 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data)
 			}
 			break;
 
+		/* 
+		 * MISSILE POSITION
+		 */
+		case RESM0: /* Reset missile 0 */
+			m_pos[0] = x_right(x() + cycles + 5);
+			if(m_pos[0] < 2)
+				m_pos[0] = 2;
+			break;
+
+		case RESM1: /* Reset missile 1 */
+			m_pos[1] = x_right(x() + cycles + 5);
+			if(m_pos[1] < 2)
+				m_pos[1] = 2;
+			break;
+
+		case RESMP0: /* Reset missile 0 to player 0 */
+			m_lock[0] = (dataset.data & 0x2) != 0;
+			break;
+
+		case RESMP1: /* Reset missile 1 to player 1 */
+			m_lock[1] = (dataset.data & 0x2) != 0;
+			break;
+
+		case HMM0: /* Horizontal movement of missile 0 */
+			{
+				int hmm0 = data >> 4;
+				if(hmm0 >= 1 && hmm0 <= 7)
+					m_mov[0] = -hmm0;
+				else if(hmm0 >= 8 && hmm0 <= 15)
+					m_mov[0] = (16 - hmm0);
+				else
+					m_mov[0] = 0;
+			}
+			break;
+
+		case HMM1: /* Horizontal movement of missile 1 */
+			{
+				int hmm0 = data >> 4;
+				if(hmm0 >= 1 && hmm0 <= 7)
+					m_mov[1] = -hmm0;
+				else if(hmm0 >= 8 && hmm0 <= 15)
+					m_mov[1] = (16 - hmm0);
+				else
+					m_mov[1] = 0;
+			}
+			break;
+
+		/* 
+		 * BALL POSITION
+		 */
+		case RESBL: /* Reset ball */
+			b_pos = x_right(x() + cycles + 5);
+			if(b_pos < 2)
+				b_pos = 2;
+			break;
+
+		case HMBL: /* Horizontal movement of missile 0 */
+			{
+				int hmbl = data >> 4;
+				if(hmbl >= 1 && hmbl <= 7)
+					b_mov = -hmbl;
+				else if(hmbl >= 8 && hmbl <= 15)
+					b_mov = (16 - hmbl);
+				else
+					b_mov = 0;
+			}
+			break;
+
+		/*
+		 * SPRITES MOVEMENT
+		 */
 		case HMOVE: /* request horizontal movement of players,
 			       missiles and ball */
 			for(i=0; i<2; i++)
 			{
 				p_pos[i] += p_mov[i];
+				m_pos[i] += m_mov[i];
 				if (p_pos[i] >= 160)
 					p_pos[i] = 0;
 				else if (p_pos[i] < 0)
 					p_pos[i] = 159;
+				if(m_lock[i])
+				{
+					switch(p_size[i])
+					{
+						case 0x5: /* double size */
+							m_pos[i] = p_pos[i] + 6;
+							break;
+						case 0x7: /* quad size */
+							m_pos[i] = p_pos[i] + 10;
+							break;
+						default: /* regular size */
+							m_pos[i] = p_pos[i] + 3;
+					}
+					break;
+				}
+				else
+				{
+					if (m_pos[i] >= 160)
+						m_pos[i] = 0;
+					else if (m_pos[i] < 0)
+						m_pos[i] = 159;
+				}
 			}
+			b_pos += b_mov;
+			if (b_pos >= 160)
+				b_pos = 0;
+			else if (b_pos < 0)
+				b_pos = 159;
 			break;
 
 		case HMCLR: /* horizontal movement clear */
 			for(i=0; i<2; i++)
 			{
 				p_mov[i] = 0;
+				m_mov[i] = 0;
 			}
+			b_mov = 0;
 			break;
+
+		default:
+			dataset2.pos = pos;
+			dataset2.data = data;
+			dataset2.cycles = cycles;
 	}
 	return 0;
+}
+
+inline void set_registers()
+{
+	int i;
+
+	switch(dataset.pos)
+	{
+		/*
+		 * BACKGROUND
+		 */
+		case COLUBK: /* Background color */
+			bg_color = dataset.data;
+			break;
+
+		/*
+		 * PLAYFIELD
+		 */
+		case COLUPF: /* Playfield color */
+			pf_color = dataset.data;
+			break;
+
+		case CTRLPF: /* Control playfield */
+			pf_reflect = dataset.data & 0x1;
+			pf_score = dataset.data & 0x2;
+			pf_priority = dataset.data & 0x4;
+			b_size = (dataset.data & 0x30) >> 5;
+			break;
+
+		case PF0: /* Playfield graphics 0 */
+			for(i=4; i<8; i++)
+				pf[i-4] = (dataset.data & (1 << i)) >> i;
+			break;
+
+		case PF1: /* Playfield graphics 1 */
+			for(i=0; i<8; i++)
+				pf[i+4] = (dataset.data & (0x80 >> i)) != 0;
+			break;
+
+		case PF2: /* Playfield graphics 2 */
+			for(i=0; i<8; i++)
+				pf[i+12] = (dataset.data & (1 << i)) >> i;
+			break;
+
+		/*
+		 * PLAYER APPEARENCE
+		 */
+		case COLUP0:
+			p_color[0] = dataset.data;
+			break;
+
+		case COLUP1:
+			p_color[1] = dataset.data;
+			break;
+
+		case GRP0:
+			p_grp[0] = dataset.data;
+			redraw_player(0);
+			break;
+
+		case GRP1:
+			p_grp[1] = dataset.data;
+			redraw_player(1);
+			break;
+
+		case NUSIZ0:
+			p_size[0] = dataset.data & 0x7;
+			redraw_player(0);
+			m_size[0] = ((dataset.data & 0x30) >> 5) + 1;
+			redraw_missile(0);
+			break;
+
+		case NUSIZ1:
+			p_size[1] = dataset.data & 0x7;
+			redraw_player(1);
+			m_size[1] = ((dataset.data & 0x30) >> 5) + 1;
+			redraw_missile(1);
+			break;
+
+		case REFP0:
+			p_reflect[0] = (dataset.data & 0x8) != 0;
+			redraw_player(0);
+			break;
+
+		case REFP1:
+			p_reflect[1] = (dataset.data & 0x8) != 0;
+			redraw_player(1);
+			break;
+
+		/*
+		 * MISSILE & BALL APPEARENCE
+		 */
+		case ENAM0:
+			m_enabled[0] = (dataset.data & 0x2) != 0;
+			break;
+
+		case ENAM1:
+			m_enabled[1] = (dataset.data & 0x2) != 0;
+			break;
+
+		case ENABL:
+			b_enabled = (dataset.data & 0x2) != 0;
+			break;
+
+	}
+	dataset.pos = dataset2.pos;
+	dataset.data = dataset2.data;
+	dataset.cycles = dataset2.cycles;
 }
 
 inline void drln(int x1, int x2, int color, TYPE type)
@@ -383,7 +596,7 @@ inline void drln(int x1, int x2, int color, TYPE type)
 	/* todo - treat collision */
 }
 
-inline void draw_pf(int x1, int x2)
+inline void draw_pf(int x1, int x2, int priority)
 {
 	inline int xs_right(int x)  { if(x < x1) return x1; else return x; }
 	inline int xs_left(int x) { if(x > x2) return x2; else return x; }
@@ -397,7 +610,7 @@ inline void draw_pf(int x1, int x2)
 				drln(
 						xs_left(i*4), 
 						xs_right(i*4+4), 
-						pf_score? p_color[0]: pf_color,
+						priority == 1? pf_color : (pf_score? p_color[0]: pf_color),
 						PLAYFIELD);
 	// right side of the screen (optimize!)
 	for(i=0; i<20; i++)
@@ -406,8 +619,35 @@ inline void draw_pf(int x1, int x2)
 				drln(
 						xs_left((i+20)*4),
 						xs_right((i+20)*4+4), 
-						pf_score? p_color[1]: pf_color,
+						priority == 1? pf_color : (pf_score? p_color[1]: pf_color),
 						PLAYFIELD);
+	// draw ball
+	for(i=0; i<8; i++)
+		if(b_graphic[i])
+			if((i + b_pos) % 160 >= x1 && (i + b_pos) % 160 <= x2)
+				drln(
+						xs_left((i + b_pos) % 160), 
+						xs_right((i + b_pos) % 160 + 1), 
+						priority == 1? pf_color : (pf_score? p_color[1]: pf_color),
+						BALL);
+}
+
+inline void draw_missile(int m, int x1, int x2)
+{
+	inline int xs_right(int x)  { if(x < x1) return x1; else return x; }
+	inline int xs_left(int x) { if(x > x2) return x2; else return x; }
+
+	int i;
+	
+	// draw missile
+	for(i=0; i<8; i++)
+		if(m_graphic[m][i])
+			if((i + m_pos[m]) % 160 >= x1 && (i + m_pos[m]) % 160 <= x2)
+				drln(
+						xs_left((i + m_pos[m]) % 160), 
+						xs_right((i + m_pos[m]) % 160 + 1), 
+						p_color[m],
+						m == 0? MISSILE_0: MISSILE_1);
 }
 
 inline void draw_player(int p, int x1, int x2)
@@ -433,6 +673,9 @@ inline void draw_player(int p, int x1, int x2)
  * executed, and it'll be 0 if dev_video_sync_type is VERTICAL_SYNC. */
 EXPORT void dev_video_step(int cycles)
 {
+	/* set the registers data */
+	set_registers();
+
 	/* exit if not in the frame */
 	if(y() < 0 || y() > 191 || x()+cycles < 0)
 		return;
@@ -449,17 +692,21 @@ EXPORT void dev_video_step(int cycles)
 
 	/* draw playfield if priority low */
 	if(!pf_priority)
-		draw_pf(x_left(x()), x_right(x()+cycles));
+		draw_pf(x_left(x()), x_right(x()+cycles), 0);
 
-	
+	/* draw missiles and players */
+	if(m_enabled[1])
+		draw_missile(1, x_left(x()), x_right(x()+cycles));
+	if(p_grp[1])
+		draw_player(1, x_left(x()), x_right(x()+cycles));
+	if(m_enabled[0])
+		draw_missile(0, x_left(x()), x_right(x()+cycles));
+	if(p_grp[0])
+		draw_player(0, x_left(x()), x_right(x()+cycles));
 
-	/* draw players */
-	draw_player(0, x_left(x()), x_right(x()+cycles));
-	draw_player(1, x_left(x()), x_right(x()+cycles));
-
-	/* draw playfield if priority low */
+	/* draw playfield if priority high */
 	if(pf_priority)
-		draw_pf(x_left(x()), x_right(x()+cycles));
+		draw_pf(x_left(x()), x_right(x()+cycles), 1);
 }
 
 /* The following functions (inside the DEBUG directive) are used only by the

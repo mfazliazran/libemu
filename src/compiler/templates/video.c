@@ -60,7 +60,7 @@ EXPORT void dev_video_reset()
  * Return value: 
  *   if  0 is returned, the memory will not be updated; 
  *   if -1 is returned, the memory will be updated. */
-EXPORT int dev_video_memory_set(long pos, unsigned char data)
+EXPORT int dev_video_memory_set(long pos, unsigned char data, int cycles)
 {
 	return -1;
 }

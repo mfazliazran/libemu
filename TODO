@@ -1,3 +1,8 @@
+- collision
+- delay
+- score pitfall
+
+
 - next scanline button
 - add SDL events
 - capture segfaults
@@ -6,3 +11,4 @@
 - interrputs
 - messages on the emulator
 - special options
+- bankswitching

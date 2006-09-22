@@ -39,7 +39,7 @@ typedef unsigned char BYTE;
 #define REL_ADDR(pc,src) 	(pc+((signed char)src))
 
 /* push & pull from stack */
-#define PUSH(b) 		dev_mem_set(SP+0x100,(b));SP--
+#define PUSH(b) 		dev_mem_set(SP+0x100,(b),cycles);SP--
 #define PULL()			dev_mem_get((++SP)+0x100)
 
 /****************************
@@ -1509,7 +1509,7 @@ again:
 				if (opcode == 0x0A)
 					A = src;
 				else
-					dev_mem_set(address,src);
+					dev_mem_set(address,src,cycles);
 				break;
 
 			/*******
@@ -1517,7 +1517,10 @@ again:
 			 *******/
 			case 0x90:
 				if (C == 0)
+				{
 					PC = src;
+					cycles++;
+				}
 				break;
 
 			/*******
@@ -1525,7 +1528,10 @@ again:
 			 *******/
 			case 0xB0:
 				if (C != 0)
+				{
 					PC = src;
+					cycles++;
+				}
 				break;
 
 			/*******
@@ -1533,7 +1539,10 @@ again:
 			 *******/
 			case 0xF0:
 				if (Z != 0)
+				{
 					PC = src;
+					cycles++;
+				}
 				break;
 
 			/*******
@@ -1552,7 +1561,10 @@ again:
 			 *******/
 			case 0x30:
 				if (S != 0)
+				{
+					cycles++;
 					PC = src;
+				}
 				break;
 
 			/*******
@@ -1560,7 +1572,10 @@ again:
 			 *******/
 			case 0xD0:
 				if (Z == 0)
+				{
 					PC = src;
+					cycles++;
+				}
 				break;
 				
 			/*******
@@ -1568,7 +1583,10 @@ again:
 			 *******/
 			case 0x10:
 				if (S == 0)
+				{
 					PC = src;
+					cycles++;
+				}
 				break;
 
 			/*******
@@ -1589,7 +1607,10 @@ again:
 			 *******/
 			case 0x50:
 				if (O == 0)
+				{
 					PC = src;
+					cycles++;
+				}
 				break;
 
 			/*******
@@ -1597,7 +1618,10 @@ again:
 			 *******/
 			case 0x70:
 				if (O != 0)
+				{
 					PC = src;
+					cycles++;
+				}
 				break;
 
 			/*******
@@ -1679,7 +1703,7 @@ again:
 				src = (src - 1) & 0xff;
 				SET_SIGN(src);
 				SET_ZERO(src);
-				dev_mem_set(address,src);
+				dev_mem_set(address,src,cycles);
 				break;
 
 			/*******
@@ -1727,7 +1751,7 @@ again:
 				src = (src + 1) & 0xff;
 				SET_SIGN(src);
 				SET_ZERO(src);
-				dev_mem_set(address, src);
+				dev_mem_set(address, src, cycles);
 				break;
 
 			/*******
@@ -1824,7 +1848,7 @@ again:
 				if(opcode == 0x4A)
 					A = src;
 				else
-					dev_mem_set(address, src);
+					dev_mem_set(address, src, cycles);
 				break;
 
 			/*******
@@ -1904,7 +1928,7 @@ again:
 				if(opcode == 0x2A)
 					A = src;
 				else
-					dev_mem_set(address, src);
+					dev_mem_set(address, src, cycles);
 				break;
 
 			/*******
@@ -1924,7 +1948,7 @@ again:
 				if(opcode == 0x6A)
 					A = src;
 				else
-					dev_mem_set(address, src);
+					dev_mem_set(address, src, cycles);
 				break;
 
 			/*******
@@ -2004,7 +2028,7 @@ again:
 			case 0x99:
 			case 0x81:
 			case 0x91:
-				dev_mem_set(address, A);
+				dev_mem_set(address, A, cycles);
 				break;
 
 			/*******
@@ -2013,7 +2037,7 @@ again:
 			case 0x86:
 			case 0x96:
 			case 0x8E:
-				dev_mem_set(address, X);
+				dev_mem_set(address, X, cycles);
 				break;
 
 			/*******
@@ -2022,7 +2046,7 @@ again:
 			case 0x84:
 			case 0x94:
 			case 0x8C:
-				dev_mem_set(address, Y);
+				dev_mem_set(address, Y, cycles);
 				break;
 
 			/*******

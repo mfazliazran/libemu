@@ -124,6 +124,7 @@ static int colortable[256] =
 #define GRP1    0x1c
 #define ENAM0 	0x1d
 #define ENAM1 	0x1e
+#define ENABL   0x1f
 #define HMP0	0x20
 #define HMP1    0x21
 #define HMM0  	0x22
