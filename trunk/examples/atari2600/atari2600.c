@@ -14,26 +14,26 @@ void joystick_event(KEYEVENT_TYPE evt_type, int joynumber, JOYBUTTON button)
 	{
 		switch(button)
 		{
-			case UP:    emu_mem_set(SWCHA, emu_mem_get(SWCHA) ^ 0x10); break;
-			case DOWN:  emu_mem_set(SWCHA, emu_mem_get(SWCHA) ^ 0x20); break;
-			case LEFT:  emu_mem_set(SWCHA, emu_mem_get(SWCHA) ^ 0x40); break;
-			case RIGHT: emu_mem_set(SWCHA, emu_mem_get(SWCHA) ^ 0x80); break;
+			case UP:    emu_mem_set(SWCHA, emu_mem_get(SWCHA) ^ 0x10, 0); break;
+			case DOWN:  emu_mem_set(SWCHA, emu_mem_get(SWCHA) ^ 0x20, 0); break;
+			case LEFT:  emu_mem_set(SWCHA, emu_mem_get(SWCHA) ^ 0x40, 0); break;
+			case RIGHT: emu_mem_set(SWCHA, emu_mem_get(SWCHA) ^ 0x80, 0); break;
 			case B0:    emu_mem_set_direct(INPT4, emu_mem_get(INPT4) ^ 0x80); break;
-			case B3:    emu_mem_set(SWCHB, emu_mem_get(SWCHB) ^ 0x02); break;
-			case B4:    emu_mem_set(SWCHB, emu_mem_get(SWCHB) ^ 0x04); break;
+			case B3:    emu_mem_set(SWCHB, emu_mem_get(SWCHB) ^ 0x02, 0); break;
+			case B4:    emu_mem_set(SWCHB, emu_mem_get(SWCHB) ^ 0x01, 0); break;
 		}
 	}
 	else
 	{
 		switch(button)
 		{
-			case UP:    emu_mem_set(SWCHA, emu_mem_get(SWCHA) | 0x10); break;
-			case DOWN:  emu_mem_set(SWCHA, emu_mem_get(SWCHA) | 0x20); break;
-			case LEFT:  emu_mem_set(SWCHA, emu_mem_get(SWCHA) | 0x40); break;
-			case RIGHT: emu_mem_set(SWCHA, emu_mem_get(SWCHA) | 0x80); break;
+			case UP:    emu_mem_set(SWCHA, emu_mem_get(SWCHA) | 0x10, 0); break;
+			case DOWN:  emu_mem_set(SWCHA, emu_mem_get(SWCHA) | 0x20, 0); break;
+			case LEFT:  emu_mem_set(SWCHA, emu_mem_get(SWCHA) | 0x40, 0); break;
+			case RIGHT: emu_mem_set(SWCHA, emu_mem_get(SWCHA) | 0x80, 0); break;
 			case B0:    emu_mem_set_direct(INPT4, emu_mem_get(INPT4) | 0x80); break;
-			case B3:    emu_mem_set(SWCHB, emu_mem_get(SWCHB) | 0x02); break;
-			case B4:    emu_mem_set(SWCHB, emu_mem_get(SWCHB) | 0x04); break;
+			case B3:    emu_mem_set(SWCHB, emu_mem_get(SWCHB) | 0x02, 0); break;
+			case B4:    emu_mem_set(SWCHB, emu_mem_get(SWCHB) | 0x01, 0); break;
 		}
 	}
 }

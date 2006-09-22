@@ -55,7 +55,7 @@ void emu_video_draw_pixel(int x, int y, long palette_color);
 void emu_video_draw_hline(int x1, int x2, int y, long palette_color);
 void (*emu_video_reset)();
 void (*emu_video_step)(int cycles);
-int (*emu_video_memory_set)(unsigned long int pos, unsigned char data);
+int (*emu_video_memory_set)(unsigned long int pos, unsigned char data, int cycles);
 char* (*emu_video_debug_name)(int n);
 char* (*emu_video_debug)(int n);
 
@@ -64,7 +64,7 @@ int emu_generic_init(char* filename, double device_cycles_per_cpu_cycle);
 char* emu_generic_name[MAX_GENERIC];
 void (*emu_generic_reset[MAX_GENERIC])();
 void (*emu_generic_step[MAX_GENERIC])(int cycles);
-int (*emu_generic_memory_set[MAX_GENERIC])(unsigned long int pos, unsigned char data);
+int (*emu_generic_memory_set[MAX_GENERIC])(unsigned long int pos, unsigned char data, int cycles);
 char* (*emu_generic_debug_name[MAX_GENERIC])(int n);
 char* (*emu_generic_debug[MAX_GENERIC])(int n);
 
@@ -73,7 +73,7 @@ unsigned long int emu_mem_size();
 void emu_mem_init(unsigned long sz);
 void emu_mem_init_k(unsigned int sz);
 void emu_mem_set_direct(unsigned long int pos, unsigned char data);
-void emu_mem_set(unsigned long int pos, unsigned char data);
+void emu_mem_set(unsigned long int pos, unsigned char data, int cycles);
 unsigned char emu_mem_get(unsigned long int pos);
 unsigned long emu_mem_get_reference();
 void emu_mem_set_reference(unsigned long initial_pos);

@@ -15,7 +15,7 @@ void (*dev_message)(char* message);
 /* Memory */
 unsigned long int (*dev_mem_size)();
 void (*dev_mem_set_direct)(unsigned long int pos, unsigned char data);
-void (*dev_mem_set)(unsigned long int pos, unsigned char data);
+void (*dev_mem_set)(unsigned long int pos, unsigned char data, int cycles);
 unsigned char (*dev_mem_get)(unsigned long int pos);
 
 /* Video */
@@ -30,7 +30,7 @@ EXPORT void set_callbacks(
 	unsigned long int (*dev_mem_size_ptr)(),
 	void (*dev_message_ptr)(char*),
 	void (*dev_mem_set_direct_ptr)(unsigned long int, unsigned char),
-	void (*dev_mem_set_ptr)(unsigned long int, unsigned char),
+	void (*dev_mem_set_ptr)(unsigned long int, unsigned char, int),
 	unsigned char (*dev_mem_get_ptr)(unsigned long int)
 ) 
 {

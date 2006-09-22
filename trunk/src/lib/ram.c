@@ -273,7 +273,7 @@ void emu_mem_set_direct(unsigned long int pos, unsigned char data)
 }
 
 /* Sets a byte into the memory */
-void emu_mem_set(unsigned long int pos, unsigned char data)
+void emu_mem_set(unsigned long int pos, unsigned char data, int cycles)
 {
 	GSList *list;
 	gboolean set_memory = TRUE;
@@ -289,11 +289,11 @@ void emu_mem_set(unsigned long int pos, unsigned char data)
 			switch(((MEMORY_MAP*)(list->data))->device)
 			{
 				case VIDEO:
-					if(!emu_video_memory_set(pos, data))
+					if(!emu_video_memory_set(pos, data, cycles * emu_video_cycles))
 						set_memory = FALSE;
 					break;
 				default:
-					if(!emu_generic_memory_set[((MEMORY_MAP*)(list->data))->device](pos, data))
+					if(!emu_generic_memory_set[((MEMORY_MAP*)(list->data))->device](pos, data, cycles * emu_generic_cycles[((MEMORY_MAP*)(list->data))->device]))
 						set_memory = FALSE;
 			}
 		}

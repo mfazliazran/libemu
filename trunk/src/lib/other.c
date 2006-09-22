@@ -10,7 +10,7 @@ int connect_callbacks(GModule* mod)
 		unsigned long (*dev_mem_size_ptr)(),
 		void (*dev_message_ptr)(char*),
 		void (*dev_mem_set_direct_ptr)(unsigned long int, unsigned char),
-		void (*dev_mem_set_ptr)(unsigned long int, unsigned char),
+		void (*dev_mem_set_ptr)(unsigned long int, unsigned char, int),
 		unsigned char (*dev_mem_get_ptr)(unsigned long int)
 	);
 
