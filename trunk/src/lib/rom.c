@@ -53,7 +53,7 @@ static void load_rom_clicked(GtkButton *button, gpointer data)
 void emu_rom_set_load_callback(char* title, char* filter, void (*callback)(char* filename))
 {
 	GtkWidget *button;
-	DIALOG *dl = g_malloc(sizeof(DIALOG));
+	DIALOG *dl = malloc(sizeof(DIALOG));
 	button = button_with_stock_image(title, "gtk-open", FALSE);
 	gtk_box_pack_start_defaults(GTK_BOX(controls), button);
 	dl->title = title;
