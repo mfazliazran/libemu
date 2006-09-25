@@ -13,7 +13,7 @@ EXPORT char dev_type[] = "video";
 /* Fill in the name of the device */
 EXPORT char dev_video_name[] = "TIA1A";
 
-/* These two variables set the number of horizontal and vertical pixels of
+/* These two variables set the number of horizontal and vertical cols of
  * this video card. */
 EXPORT int dev_video_pixels_x = 160;
 EXPORT int dev_video_pixels_y = 192;
@@ -54,13 +54,13 @@ EXPORT void dev_video_step(int cycles);
 
 typedef enum
 {
-	PLAYFIELD,
-	PLAYER_0,
-	PLAYER_1,
-	MISSILE_0,
-	MISSILE_1,
-	BALL,
-	NUM_TYPES
+	PLAYFIELD = 0x1,
+	PLAYER_0  = 0x2,
+	PLAYER_1  = 0x4,
+	MISSILE_0 = 0x8,
+	MISSILE_1 = 0x10,
+	BALL      = 0x20,
+	NUM_TYPES = 6
 } TYPE;
 
 typedef struct
@@ -108,8 +108,8 @@ static int b_size;
 static int b_enabled;
 static int b_graphic[8];
 
-/* collision */
-static unsigned char pixel[NUM_TYPES][160];
+/* collision detection */
+static unsigned char col[160];
 
 /*
  * INLINE FUNCTIONS
@@ -178,9 +178,6 @@ EXPORT void dev_video_reset()
 	b_graphic[0] = 1;
 	for(j=1; j<8; j++)
 		b_graphic[j] = 0;
-	for(i=0; i<NUM_TYPES; i++)
-		for(j=0; j<160; j++)
-			pixel[i][j] = 0;
 }
 
 /* redraw the player graphic variable */
@@ -299,7 +296,7 @@ inline void redraw_ball()
  *   if -1 is returned, the memory will be updated. */
 EXPORT int dev_video_memory_set(long pos, unsigned char data, int cycles)
 {
-	int i, j;
+	int i;
 
 	switch(pos)
 	{
@@ -484,9 +481,6 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data, int cycles)
 		 * COLLISIONS
 		 */
 		case CXCLR: /* clear collisions */
-			for(i=0; i<NUM_TYPES; i++)
-				for(j=0; j<160; j++)
-					pixel[i][j] = 0;
 			dev_mem_set_direct(CXM0P, 0x0);
 			dev_mem_set_direct(CXM1P, 0x0);
 			dev_mem_set_direct(CXP0FB, 0x0);
@@ -495,6 +489,8 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data, int cycles)
 			dev_mem_set_direct(CXM1FB, 0x0);
 			dev_mem_set_direct(CXBLPF, 0x0);
 			dev_mem_set_direct(CXPPMM, 0x0);
+			for(i=0; i<=cycles; i++)
+				col[i] = 0;
 			break;
 
 		default:
@@ -617,14 +613,20 @@ inline void set_registers()
 /* draw on the screen, and fill the collision variable */
 inline void drln(int x1, int x2, int color, TYPE type)
 {
-	int x;
+	int i;
 
 	/* draw on the screen */
-	dev_video_draw_hline(x1, x2, y(), color);
-
-	/* set collision variable (optimize!) */
-	for(x=0; x<=x1-x2+1; x++)
-		pixel[type][x] = 1;
+	if(x1 == x2)
+	{
+		dev_video_draw_pixel(x1, y(), color);
+		col[x1] |= type;
+	}
+	else
+	{
+		dev_video_draw_hline(x1, x2, y(), color);
+		for(i=x1; i<x2; i++)
+			col[i] |= type;
+	}
 }
 
 /* draw the playfield and the ball */
@@ -660,7 +662,7 @@ inline void draw_pf(int x1, int x2, int priority)
 				if((i + b_pos) % 160 >= x1 && (i + b_pos) % 160 <= x2)
 					drln(
 						xs_left((i + b_pos) % 160), 
-						xs_right((i + b_pos) % 160 + 1), 
+						xs_right((i + b_pos) % 160), 
 						priority == 1? pf_color : (pf_score? p_color[1]: pf_color),
 						BALL);
 }
@@ -679,7 +681,7 @@ inline void draw_missile(int m, int x1, int x2)
 			if((i + m_pos[m]) % 160 >= x1 && (i + m_pos[m]) % 160 <= x2)
 				drln(
 						xs_left((i + m_pos[m]) % 160), 
-						xs_right((i + m_pos[m]) % 160 + 1), 
+						xs_right((i + m_pos[m]) % 160), 
 						p_color[m],
 						m == 0? MISSILE_0: MISSILE_1);
 }
@@ -698,7 +700,7 @@ inline void draw_player(int p, int x1, int x2)
 			if((i + p_pos[p]) % 160 >= x1 && (i + p_pos[p]) % 160 <= x2)
 				drln(
 						xs_left((i + p_pos[p]) % 160), 
-						xs_right((i + p_pos[p]) % 160 + 1), 
+						xs_right((i + p_pos[p]) % 160), 
 						p_color[p],
 						p == 0? PLAYER_0: PLAYER_1);
 }
@@ -706,11 +708,11 @@ inline void draw_player(int p, int x1, int x2)
 /* check for collisions */
 void collisions(int cycles)
 {
-	/* check collisions */
+	// check collisions
 	inline int check_collision(TYPE type1, TYPE type2) {
 		int k;
-		for(k=0; k<=cycles; k++)
-			if(pixel[type1][k] + pixel[type2][k] > 1)
+		for(k=0; k<cycles; k++)
+			if((col[k] & (type1 | type2)) != 0)
 				return 1;
 		return 0;
 	}
@@ -744,10 +746,9 @@ void collisions(int cycles)
 		dev_mem_set_direct(CXPPMM, dev_mem_get(CXPPMM) | 0x80);
 	if(check_collision(MISSILE_0, MISSILE_0))
 		dev_mem_set_direct(CXPPMM, dev_mem_get(CXPPMM) | 0x40);
-	int i, j;
-	for(i=0; i<NUM_TYPES; i++)
-		for(j=0; j<cycles; j++)
-			pixel[i][j] = 0;
+	int i;
+	for(i=0; i<=cycles; i++)
+		col[i] = 0;
 }
 
 /* Executes one step. Read the info on dev_video_sync_type above to understand
@@ -757,9 +758,6 @@ EXPORT void dev_video_step(int cycles)
 {
 	/* set the registers data */
 	set_registers();
-
-//	if(y() == 191)
-//		collisions();
 
 	/* exit if not in the frame */
 	if(y() < 0 || y() > 191 || x()+cycles < 0)
@@ -793,6 +791,7 @@ EXPORT void dev_video_step(int cycles)
 	if(pf_priority)
 		draw_pf(x_left(x()), x_right(x()+cycles), 1);
 
+	/* check collisions */
 	collisions(cycles);
 }
 

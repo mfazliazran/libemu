@@ -166,7 +166,7 @@ void emu_mem_init(unsigned long sz)
 		return;
 	}
 
-	ram = g_malloc(sz);
+	ram = malloc(sz);
 
 	if(!ram)
 	{
@@ -331,7 +331,7 @@ int emu_mem_map_add(int device, unsigned long int initial, unsigned long int fin
 		return 0;
 	}
 
-	mm = g_malloc(sizeof(MEMORY_MAP));
+	mm = malloc(sizeof(MEMORY_MAP));
 	mm->device = device;
 	mm->initial = initial;
 	mm->final = final;
