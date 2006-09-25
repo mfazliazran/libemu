@@ -56,7 +56,7 @@ static gboolean joystick_hide(GtkWidget *widget, GdkEvent *event, gpointer data)
 static void add_button(GtkWidget *table, const char *label, int define, int x, int y, int joynumber, void *callback)
 {
 	GtkWidget *button;
-	DATA *dt = g_malloc(sizeof(dt));
+	DATA *dt = g_malloc(sizeof(DATA));
 	
 	dt->joynumber = joynumber;
 	dt->joybutton = define;

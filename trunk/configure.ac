@@ -12,6 +12,12 @@ AC_PROG_INSTALL
 AC_PROG_CC(gcc)
 AC_PROG_MAKE_SET
 
+# Arguments
+AC_ARG_ENABLE(efence,
+        [  --enable-efence       enable 'efence' memory debug support (default disabled)],
+        [with_efence=$enableval],
+        [with_efence='no'])
+
 # Checks for GTK
 PKG_CHECK_MODULES(DEPS, gtk+-2.0 >= 2.2) 
 AC_SUBST(DEPS_CFLAGS)
@@ -22,6 +28,13 @@ SDL_VERSION=1.2.0
 AM_PATH_SDL($SDL_VERSION, :, AC_MSG_ERROR([*** SDL version $SDL_VERSION not found!]))
 CFLAGS="$CFLAGS $SDL_CFLAGS"
 LIBS="$LIBS $SDL_LIBS"
+
+# Check for efence
+if test "$with_efence" = 'yes'
+then
+  LIB_EFENCE='-lefence'
+  LIBS="$LIB_EFENCE $LIBS"
+fi
 
 # Check compiler caracteristics
 AC_C_CONST
