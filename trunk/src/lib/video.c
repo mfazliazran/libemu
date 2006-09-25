@@ -165,6 +165,7 @@ void emu_video_palette_set_color(int n_color, int r, int g, int b)
 	c->g = g;
 	c->b = b;
 	SDL_SetColors(buffer, c, n_color, 1);
+	SDL_SetColors(screen, c, n_color, 1);
 }
 
 /* Draws one pixel in the screen */

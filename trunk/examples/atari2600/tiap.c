@@ -79,6 +79,7 @@ static int bg_color;
 
 /* playfield */
 static int pf[20];
+static int pf_enabled;
 static int pf_color;
 static int pf_score;
 static int pf_priority;
@@ -520,6 +521,17 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data, int cycles)
 /* This function set the variable one cycles *after* it was set */
 inline void set_registers()
 {
+	inline void check_playfield() { 
+		int j;
+		for(j=0; j<20; j++)
+			if(pf[j] != 0)
+			{
+				pf_enabled = 1;
+				return;
+			}
+		pf_enabled = 0;
+	}
+
 	int i;
 
 	switch(dataset.pos)
@@ -548,16 +560,19 @@ inline void set_registers()
 		case PF0: /* Playfield graphics 0 */
 			for(i=4; i<8; i++)
 				pf[i-4] = (dataset.data & (1 << i)) >> i;
+			check_playfield();
 			break;
 
 		case PF1: /* Playfield graphics 1 */
 			for(i=0; i<8; i++)
 				pf[i+4] = (dataset.data & (0x80 >> i)) != 0;
+			check_playfield();
 			break;
 
 		case PF2: /* Playfield graphics 2 */
 			for(i=0; i<8; i++)
 				pf[i+12] = (dataset.data & (1 << i)) >> i;
+			check_playfield();
 			break;
 
 		/*
@@ -745,31 +760,31 @@ inline void collisions(int cycles)
 	if(m_enabled[1] && p_grp[1])
 		if(check_collision(MISSILE_1, PLAYER_1))
 			dev_mem_set_direct(CXM1P, dev_mem_get(CXM1P) | 0x40);
-	if(p_grp[0])
+	if(p_grp[0] && pf_enabled)
 		if(check_collision(PLAYER_0, PLAYFIELD))
 			dev_mem_set_direct(CXP0FB, dev_mem_get(CXP0FB) | 0x80);
 	if(p_grp[0] && b_enabled)
 		if(check_collision(PLAYER_0, BALL))
 			dev_mem_set_direct(CXP0FB, dev_mem_get(CXP0FB) | 0x40);
-	if(p_grp[0])
+	if(p_grp[0] && pf_enabled)
 		if(check_collision(PLAYER_1, PLAYFIELD))
 			dev_mem_set_direct(CXP1FB, dev_mem_get(CXP1FB) | 0x80);
 	if(p_grp[1] && b_enabled)
 		if(check_collision(PLAYER_1, BALL))
 			dev_mem_set_direct(CXP1FB, dev_mem_get(CXP1FB) | 0x40);
-	if(m_enabled[0])
+	if(m_enabled[0] && pf_enabled)
 		if(check_collision(MISSILE_0, PLAYFIELD))
 			dev_mem_set_direct(CXM0FB, dev_mem_get(CXM0FB) | 0x80);
 	if(m_enabled[0] && b_enabled)
 		if(check_collision(MISSILE_0, BALL))
 			dev_mem_set_direct(CXM0FB, dev_mem_get(CXM0FB) | 0x40);
-	if(m_enabled[1])
+	if(m_enabled[1] && pf_enabled)
 		if(check_collision(MISSILE_1, PLAYFIELD))
 			dev_mem_set_direct(CXM1FB, dev_mem_get(CXM1FB) | 0x80);
 	if(m_enabled[1] && b_enabled)
 		if(check_collision(MISSILE_1, BALL))
 			dev_mem_set_direct(CXM1FB, dev_mem_get(CXM1FB) | 0x40);
-	if(b_enabled)
+	if(b_enabled && pf_enabled)
 		if(check_collision(BALL, PLAYFIELD))
 			dev_mem_set_direct(CXBLPF, dev_mem_get(CXBLPF) | 0x80);
 	if(p_grp[0] && p_grp[1])
