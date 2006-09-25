@@ -128,6 +128,12 @@ inline int x_left(int x) {
 	else
 		return x;
 }
+inline int MINOR(int x, int y) {
+	if(x < y)
+		return x;
+	else
+		return y;
+}
 
 /* You must implement this function.
  *
@@ -145,6 +151,16 @@ EXPORT void dev_video_reset()
 
 	/* set joystick as unpressed */
 	dev_mem_set_direct(INPT4, 0x80);
+
+	/* clear collisions */
+	dev_mem_set_direct(CXM0P, 0x0);
+	dev_mem_set_direct(CXM1P, 0x0);
+	dev_mem_set_direct(CXP0FB, 0x0);
+	dev_mem_set_direct(CXP1FB, 0x0);
+	dev_mem_set_direct(CXM0FB, 0x0);
+	dev_mem_set_direct(CXM1FB, 0x0);
+	dev_mem_set_direct(CXBLPF, 0x0);
+	dev_mem_set_direct(CXPPMM, 0x0);
 
 	/* initialize variables */
 	vsync = vblank = 0;
@@ -618,7 +634,8 @@ inline void drln(int x1, int x2, int color, TYPE type)
 	/* draw on the screen */
 	if(x1 == x2)
 	{
-		dev_video_draw_pixel(x1, y(), color);
+		// dev_video_draw_pixel(x1, y(), color);
+		dev_video_draw_hline(x1, x1+1, y(), color);
 		col[x1] |= type;
 	}
 	else
@@ -706,46 +723,61 @@ inline void draw_player(int p, int x1, int x2)
 }
 
 /* check for collisions */
-void collisions(int cycles)
+inline void collisions(int cycles)
 {
 	// check collisions
 	inline int check_collision(TYPE type1, TYPE type2) {
 		int k;
-		for(k=0; k<cycles; k++)
-			if((col[k] & (type1 | type2)) != 0)
+		for(k=0; k<MINOR(cycles, 192); k++)
+			if((col[k] & (type1 | type2)) == (type1 | type2))
 				return 1;
 		return 0;
 	}
-	if(check_collision(MISSILE_0, PLAYER_1))
-		dev_mem_set_direct(CXM0P, dev_mem_get(CXM0P) | 0x80);
-	if(check_collision(MISSILE_0, PLAYER_0))
-		dev_mem_set_direct(CXM0P, dev_mem_get(CXM0P) | 0x40);
-	if(check_collision(MISSILE_1, PLAYER_0))
-		dev_mem_set_direct(CXM1P, dev_mem_get(CXM1P) | 0x80);
-	if(check_collision(MISSILE_1, PLAYER_1))
-		dev_mem_set_direct(CXM1P, dev_mem_get(CXM1P) | 0x40);
-	if(check_collision(PLAYER_0, PLAYFIELD))
-		dev_mem_set_direct(CXP0FB, dev_mem_get(CXP0FB) | 0x80);
-	if(check_collision(PLAYER_0, BALL))
-		dev_mem_set_direct(CXP0FB, dev_mem_get(CXP0FB) | 0x40);
-	if(check_collision(PLAYER_1, PLAYFIELD))
-		dev_mem_set_direct(CXP1FB, dev_mem_get(CXP1FB) | 0x80);
-	if(check_collision(PLAYER_1, BALL))
-		dev_mem_set_direct(CXP1FB, dev_mem_get(CXP1FB) | 0x40);
-	if(check_collision(MISSILE_0, PLAYFIELD))
-		dev_mem_set_direct(CXM0FB, dev_mem_get(CXM0FB) | 0x80);
-	if(check_collision(MISSILE_0, BALL))
-		dev_mem_set_direct(CXM0FB, dev_mem_get(CXM0FB) | 0x40);
-	if(check_collision(MISSILE_1, PLAYFIELD))
-		dev_mem_set_direct(CXM1FB, dev_mem_get(CXM1FB) | 0x80);
-	if(check_collision(MISSILE_1, BALL))
-		dev_mem_set_direct(CXM1FB, dev_mem_get(CXM1FB) | 0x40);
-	if(check_collision(BALL, PLAYFIELD))
-		dev_mem_set_direct(CXBLPF, dev_mem_get(CXBLPF) | 0x80);
-	if(check_collision(PLAYER_0, PLAYER_1))
-		dev_mem_set_direct(CXPPMM, dev_mem_get(CXPPMM) | 0x80);
-	if(check_collision(MISSILE_0, MISSILE_0))
-		dev_mem_set_direct(CXPPMM, dev_mem_get(CXPPMM) | 0x40);
+	if(m_enabled[0] && p_grp[1])
+		if(check_collision(MISSILE_0, PLAYER_1))
+			dev_mem_set_direct(CXM0P, dev_mem_get(CXM0P) | 0x80);
+	if(m_enabled[0] && p_grp[0])
+		if(check_collision(MISSILE_0, PLAYER_0))
+			dev_mem_set_direct(CXM0P, dev_mem_get(CXM0P) | 0x40);
+	if(m_enabled[1] && p_grp[0])
+		if(check_collision(MISSILE_1, PLAYER_0))
+			dev_mem_set_direct(CXM1P, dev_mem_get(CXM1P) | 0x80);
+	if(m_enabled[1] && p_grp[1])
+		if(check_collision(MISSILE_1, PLAYER_1))
+			dev_mem_set_direct(CXM1P, dev_mem_get(CXM1P) | 0x40);
+	if(p_grp[0])
+		if(check_collision(PLAYER_0, PLAYFIELD))
+			dev_mem_set_direct(CXP0FB, dev_mem_get(CXP0FB) | 0x80);
+	if(p_grp[0] && b_enabled)
+		if(check_collision(PLAYER_0, BALL))
+			dev_mem_set_direct(CXP0FB, dev_mem_get(CXP0FB) | 0x40);
+	if(p_grp[0])
+		if(check_collision(PLAYER_1, PLAYFIELD))
+			dev_mem_set_direct(CXP1FB, dev_mem_get(CXP1FB) | 0x80);
+	if(p_grp[1] && b_enabled)
+		if(check_collision(PLAYER_1, BALL))
+			dev_mem_set_direct(CXP1FB, dev_mem_get(CXP1FB) | 0x40);
+	if(m_enabled[0])
+		if(check_collision(MISSILE_0, PLAYFIELD))
+			dev_mem_set_direct(CXM0FB, dev_mem_get(CXM0FB) | 0x80);
+	if(m_enabled[0] && b_enabled)
+		if(check_collision(MISSILE_0, BALL))
+			dev_mem_set_direct(CXM0FB, dev_mem_get(CXM0FB) | 0x40);
+	if(m_enabled[1])
+		if(check_collision(MISSILE_1, PLAYFIELD))
+			dev_mem_set_direct(CXM1FB, dev_mem_get(CXM1FB) | 0x80);
+	if(m_enabled[1] && b_enabled)
+		if(check_collision(MISSILE_1, BALL))
+			dev_mem_set_direct(CXM1FB, dev_mem_get(CXM1FB) | 0x40);
+	if(b_enabled)
+		if(check_collision(BALL, PLAYFIELD))
+			dev_mem_set_direct(CXBLPF, dev_mem_get(CXBLPF) | 0x80);
+	if(p_grp[0] && p_grp[1])
+		if(check_collision(PLAYER_0, PLAYER_1))
+			dev_mem_set_direct(CXPPMM, dev_mem_get(CXPPMM) | 0x80);
+	if(m_enabled[0] && m_enabled[1])
+		if(check_collision(MISSILE_0, MISSILE_0))
+			dev_mem_set_direct(CXPPMM, dev_mem_get(CXPPMM) | 0x40);
 	int i;
 	for(i=0; i<=cycles; i++)
 		col[i] = 0;
