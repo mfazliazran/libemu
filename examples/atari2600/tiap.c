@@ -109,7 +109,7 @@ static int b_enabled;
 static int b_graphic[8];
 
 /* collision */
-static unsigned char pixel[20];
+static unsigned char pixel[NUM_TYPES][160];
 
 /*
  * INLINE FUNCTIONS
@@ -140,8 +140,8 @@ EXPORT void dev_video_reset()
 	for(i=0; i<256; i++)
 		dev_video_palette_set_color(i, 
 				colortable[i] & 0xff,
-				(colortable[i] / 0x100) & 0xff,
-				(colortable[i] / 0x10000) & 0xff);	
+				(colortable[i] >> 8) & 0xff,
+				(colortable[i] >> 16) & 0xff);	
 
 	/* set joystick as unpressed */
 	dev_mem_set_direct(INPT4, 0x80);
@@ -178,8 +178,12 @@ EXPORT void dev_video_reset()
 	b_graphic[0] = 1;
 	for(j=1; j<8; j++)
 		b_graphic[j] = 0;
+	for(i=0; i<NUM_TYPES; i++)
+		for(j=0; j<160; j++)
+			pixel[i][j] = 0;
 }
 
+/* redraw the player graphic variable */
 inline void redraw_player(int p)
 {
 	int i, j;
@@ -245,6 +249,7 @@ inline void redraw_player(int p)
 	}
 }
 
+/* redraw the missile graphic variable */
 inline void redraw_missile(int m)
 {
 	int i;
@@ -264,6 +269,7 @@ inline void redraw_missile(int m)
 	}
 }
 
+/* redraw the ball graphic variable */
 inline void redraw_ball()
 {
 	int i;
@@ -293,7 +299,7 @@ inline void redraw_ball()
  *   if -1 is returned, the memory will be updated. */
 EXPORT int dev_video_memory_set(long pos, unsigned char data, int cycles)
 {
-	int i;
+	int i, j;
 
 	switch(pos)
 	{
@@ -474,6 +480,23 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data, int cycles)
 			b_mov = 0;
 			break;
 
+		/*
+		 * COLLISIONS
+		 */
+		case CXCLR: /* clear collisions */
+			for(i=0; i<NUM_TYPES; i++)
+				for(j=0; j<160; j++)
+					pixel[i][j] = 0;
+			dev_mem_set_direct(CXM0P, 0x0);
+			dev_mem_set_direct(CXM1P, 0x0);
+			dev_mem_set_direct(CXP0FB, 0x0);
+			dev_mem_set_direct(CXP1FB, 0x0);
+			dev_mem_set_direct(CXM0FB, 0x0);
+			dev_mem_set_direct(CXM1FB, 0x0);
+			dev_mem_set_direct(CXBLPF, 0x0);
+			dev_mem_set_direct(CXPPMM, 0x0);
+			break;
+
 		default:
 			dataset2.pos = pos;
 			dataset2.data = data;
@@ -482,6 +505,7 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data, int cycles)
 	return 0;
 }
 
+/* This function set the variable one cycles *after* it was set */
 inline void set_registers()
 {
 	int i;
@@ -590,12 +614,20 @@ inline void set_registers()
 	dataset.cycles = dataset2.cycles;
 }
 
+/* draw on the screen, and fill the collision variable */
 inline void drln(int x1, int x2, int color, TYPE type)
 {
+	int x;
+
+	/* draw on the screen */
 	dev_video_draw_hline(x1, x2, y(), color);
-	/* todo - treat collision */
+
+	/* set collision variable (optimize!) */
+	for(x=0; x<=x1-x2+1; x++)
+		pixel[type][x] = 1;
 }
 
+/* draw the playfield and the ball */
 inline void draw_pf(int x1, int x2, int priority)
 {
 	inline int xs_right(int x)  { if(x < x1) return x1; else return x; }
@@ -622,16 +654,18 @@ inline void draw_pf(int x1, int x2, int priority)
 						priority == 1? pf_color : (pf_score? p_color[1]: pf_color),
 						PLAYFIELD);
 	// draw ball
-	for(i=0; i<8; i++)
-		if(b_graphic[i])
-			if((i + b_pos) % 160 >= x1 && (i + b_pos) % 160 <= x2)
-				drln(
+	if(b_enabled)
+		for(i=0; i<8; i++)
+			if(b_graphic[i])
+				if((i + b_pos) % 160 >= x1 && (i + b_pos) % 160 <= x2)
+					drln(
 						xs_left((i + b_pos) % 160), 
 						xs_right((i + b_pos) % 160 + 1), 
 						priority == 1? pf_color : (pf_score? p_color[1]: pf_color),
 						BALL);
 }
 
+/* draw the missile */
 inline void draw_missile(int m, int x1, int x2)
 {
 	inline int xs_right(int x)  { if(x < x1) return x1; else return x; }
@@ -650,6 +684,7 @@ inline void draw_missile(int m, int x1, int x2)
 						m == 0? MISSILE_0: MISSILE_1);
 }
 
+/* draw the player */
 inline void draw_player(int p, int x1, int x2)
 {
 	inline int xs_right(int x)  { if(x < x1) return x1; else return x; }
@@ -668,6 +703,53 @@ inline void draw_player(int p, int x1, int x2)
 						p == 0? PLAYER_0: PLAYER_1);
 }
 
+/* check for collisions */
+void collisions(int cycles)
+{
+	/* check collisions */
+	inline int check_collision(TYPE type1, TYPE type2) {
+		int k;
+		for(k=0; k<=cycles; k++)
+			if(pixel[type1][k] + pixel[type2][k] > 1)
+				return 1;
+		return 0;
+	}
+	if(check_collision(MISSILE_0, PLAYER_1))
+		dev_mem_set_direct(CXM0P, dev_mem_get(CXM0P) | 0x80);
+	if(check_collision(MISSILE_0, PLAYER_0))
+		dev_mem_set_direct(CXM0P, dev_mem_get(CXM0P) | 0x40);
+	if(check_collision(MISSILE_1, PLAYER_0))
+		dev_mem_set_direct(CXM1P, dev_mem_get(CXM1P) | 0x80);
+	if(check_collision(MISSILE_1, PLAYER_1))
+		dev_mem_set_direct(CXM1P, dev_mem_get(CXM1P) | 0x40);
+	if(check_collision(PLAYER_0, PLAYFIELD))
+		dev_mem_set_direct(CXP0FB, dev_mem_get(CXP0FB) | 0x80);
+	if(check_collision(PLAYER_0, BALL))
+		dev_mem_set_direct(CXP0FB, dev_mem_get(CXP0FB) | 0x40);
+	if(check_collision(PLAYER_1, PLAYFIELD))
+		dev_mem_set_direct(CXP1FB, dev_mem_get(CXP1FB) | 0x80);
+	if(check_collision(PLAYER_1, BALL))
+		dev_mem_set_direct(CXP1FB, dev_mem_get(CXP1FB) | 0x40);
+	if(check_collision(MISSILE_0, PLAYFIELD))
+		dev_mem_set_direct(CXM0FB, dev_mem_get(CXM0FB) | 0x80);
+	if(check_collision(MISSILE_0, BALL))
+		dev_mem_set_direct(CXM0FB, dev_mem_get(CXM0FB) | 0x40);
+	if(check_collision(MISSILE_1, PLAYFIELD))
+		dev_mem_set_direct(CXM1FB, dev_mem_get(CXM1FB) | 0x80);
+	if(check_collision(MISSILE_1, BALL))
+		dev_mem_set_direct(CXM1FB, dev_mem_get(CXM1FB) | 0x40);
+	if(check_collision(BALL, PLAYFIELD))
+		dev_mem_set_direct(CXBLPF, dev_mem_get(CXBLPF) | 0x80);
+	if(check_collision(PLAYER_0, PLAYER_1))
+		dev_mem_set_direct(CXPPMM, dev_mem_get(CXPPMM) | 0x80);
+	if(check_collision(MISSILE_0, MISSILE_0))
+		dev_mem_set_direct(CXPPMM, dev_mem_get(CXPPMM) | 0x40);
+	int i, j;
+	for(i=0; i<NUM_TYPES; i++)
+		for(j=0; j<cycles; j++)
+			pixel[i][j] = 0;
+}
+
 /* Executes one step. Read the info on dev_video_sync_type above to understand
  * how this function works. [cycles] is the number of cycles that must be 
  * executed, and it'll be 0 if dev_video_sync_type is VERTICAL_SYNC. */
@@ -675,6 +757,9 @@ EXPORT void dev_video_step(int cycles)
 {
 	/* set the registers data */
 	set_registers();
+
+//	if(y() == 191)
+//		collisions();
 
 	/* exit if not in the frame */
 	if(y() < 0 || y() > 191 || x()+cycles < 0)
@@ -707,6 +792,8 @@ EXPORT void dev_video_step(int cycles)
 	/* draw playfield if priority high */
 	if(pf_priority)
 		draw_pf(x_left(x()), x_right(x()+cycles), 1);
+
+	collisions(cycles);
 }
 
 /* The following functions (inside the DEBUG directive) are used only by the
@@ -753,6 +840,15 @@ EXPORT char* dev_video_debug_name(int n)
 		case 23: return "P Pos 1";
 		case 24: return "P Mov 1";
 		case 25: return "P Enabl 1";
+
+		case 26: return "CXM0P";
+		case 27: return "CXM1P";
+		case 28: return "CXP0FB";
+		case 29: return "CXP1FB";
+		case 30: return "CXM0FB";
+		case 31: return "CXM1FB";
+		case 32: return "CXBLPF";
+		case 33: return "CXPPMM";
 		default: return NULL;
 	}
 }
@@ -852,6 +948,30 @@ EXPORT char* dev_video_debug(int n)
 			break;
 		case 25:
 			sprintf(info, "%d", p_grp[1] != 0);
+			break;
+		case 26:
+			sprintf(info, "0x%02x", dev_mem_get(CXM0P));
+			break;
+		case 27:
+			sprintf(info, "0x%02x", dev_mem_get(CXM1P));
+			break;
+		case 28:
+			sprintf(info, "0x%02x", dev_mem_get(CXP0FB));
+			break;
+		case 29:
+			sprintf(info, "0x%02x", dev_mem_get(CXP1FB));
+			break;
+		case 30:
+			sprintf(info, "0x%02x", dev_mem_get(CXM0FB));
+			break;
+		case 31:
+			sprintf(info, "0x%02x", dev_mem_get(CXM1FB));
+			break;
+		case 32:
+			sprintf(info, "0x%02x", dev_mem_get(CXBLPF));
+			break;
+		case 33:
+			sprintf(info, "0x%02x", dev_mem_get(CXPPMM));
 			break;
 		default:
 			return NULL;
