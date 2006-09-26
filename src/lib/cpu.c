@@ -360,7 +360,7 @@ static void cpu_step_clicked(GtkButton* cpu_step, gpointer data)
 	video_update();
 	generic_update();
 	emu_mem_set_reference(emu_mem_get_reference());
-	emu_video_update_screen();
+	video_update_partial_screen();
 }
 
 /* When the button Run/Pause is clicked */

@@ -138,6 +138,14 @@ void video_update()
 			gtk_entry_set_text(GTK_ENTRY(video_register[i]), emu_video_debug(i));
 }
 
+void video_update_partial_screen()
+{
+	if(!SDL_WasInit(SDL_INIT_VIDEO))
+		return;
+	SDL_BlitSurface(buffer, NULL, screen, NULL);
+	SDL_Flip(screen);
+}
+
 /*
  * API
  */
@@ -266,6 +274,13 @@ void emu_video_update_screen()
 		frame_count = 0;
 		time_busy = 0.0f;
 	}
+
+	/* clear the buffer */
+	SDL_Rect r;
+	r.x = r.y = 0;
+	r.w = *emu_video_pixels_x * scale_x;
+	r.h = *emu_video_pixels_y * scale_y;
+	SDL_FillRect(buffer, &r, 0);
 
 #ifdef __linux__
 	/* check for sdl events */

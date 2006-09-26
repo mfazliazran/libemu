@@ -1357,7 +1357,7 @@ again:
 				src = dev_mem_get(address);
 				break;
 				
-			/* Absoulte, Y: get the byte in the (absolute + Y)
+			/* Absolute, Y: get the byte in the (absolute + Y)
 			 * position. */
 			case 0x99: /* STA */
 				cycles = 1; /* 5 cycles */

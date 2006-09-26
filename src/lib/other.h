@@ -39,5 +39,6 @@ double emu_video_cycles;
 /* other functions */
 void generic_update();
 void video_update();
+void video_update_partial_screen();
 
 #endif
