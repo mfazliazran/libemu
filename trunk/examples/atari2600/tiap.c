@@ -91,7 +91,10 @@ static int p_pos[2];
 static int p_mov[2];
 static int p_size[2];
 static int p_reflect[2];
-static int p_grp[2];
+static unsigned char p_grp[2];
+static unsigned char p_grpa[2]; // used for 6-digit trick
+static unsigned char p_graph[2];
+static int p_delay[2];
 static int p_graphic[2][72];
 
 /* missiles */
@@ -175,6 +178,9 @@ EXPORT void dev_video_reset()
 		p_pos[i] = 80;
 		p_mov[i] = 0;
 		p_grp[i] = 0;
+		p_grpa[i] = 0;
+		p_graph[i] = 0;
+		p_delay[i] = 0;
 		p_size[i] = 0;
 		p_reflect[i] = 0;
 		for(j=0; j<72; j++)
@@ -205,60 +211,73 @@ inline void redraw_player(int p)
 	for(i=0; i<72; i++)
 		p_graphic[p][i] = 0;
 
+	if(p_delay[p] == 0)
+	{
+		p_graph[p] = p_grp[p];
+		if (p_grp[p] == 0)
+			return;
+	}
+	if(p_delay[p] == 1)
+	{
+		p_graph[p] = p_grpa[p];
+		if(p_grpa[p] == 0)
+			return;
+	}
+
 	switch(p_size[p])
 	{
 		case 0x0:
 			for(i=0; i<8; i++)
-				p_graphic[p][!p_reflect[p]? 7-i: i] = ((p_grp[p] & (1 << i)) != 0);
+				p_graphic[p][!p_reflect[p]? 7-i: i] = ((p_graph[p] & (1 << i)) != 0);
 			break;
 		case 0x1:
 			for(i=0; i<8; i++)
 			{
-				p_graphic[p][!p_reflect[p]? 7-i: i] = ((p_grp[p] & (1 << i)) != 0);
-				p_graphic[p][(!p_reflect[p]? 7-i: i)+16] = ((p_grp[p] & (1 << i)) != 0);
+				p_graphic[p][!p_reflect[p]? 7-i: i] = ((p_graph[p] & (1 << i)) != 0);
+				p_graphic[p][(!p_reflect[p]? 7-i: i)+16] = ((p_graph[p] & (1 << i)) != 0);
 			}
 			break;
 		case 0x2:
 			for(i=0; i<8; i++)
 			{
-				p_graphic[p][!p_reflect[p]? 7-i: i] = ((p_grp[p] & (1 << i)) != 0);
-				p_graphic[p][(!p_reflect[p]? 7-i: i)+32] = ((p_grp[p] & (1 << i)) != 0);
+				p_graphic[p][!p_reflect[p]? 7-i: i] = ((p_graph[p] & (1 << i)) != 0);
+				p_graphic[p][(!p_reflect[p]? 7-i: i)+32] = ((p_graph[p] & (1 << i)) != 0);
 			}
 			break;
 		case 0x3:
 			for(i=0; i<8; i++)
 			{
-				p_graphic[p][!p_reflect[p]? 7-i: i] = ((p_grp[p] & (1 << i)) != 0);
-				p_graphic[p][(!p_reflect[p]? 7-i: i)+16] = ((p_grp[p] & (1 << i)) != 0);
-				p_graphic[p][(!p_reflect[p]? 7-i: i)+32] = ((p_grp[p] & (1 << i)) != 0);
+				p_graphic[p][!p_reflect[p]? 7-i: i] = ((p_graph[p] & (1 << i)) != 0);
+				p_graphic[p][(!p_reflect[p]? 7-i: i)+16] = ((p_graph[p] & (1 << i)) != 0);
+				p_graphic[p][(!p_reflect[p]? 7-i: i)+32] = ((p_graph[p] & (1 << i)) != 0);
 			}
 			break;
 		case 0x4:
 			for(i=0; i<8; i++)
 			{
-				p_graphic[p][!p_reflect[p]? 7-i: i] = ((p_grp[p] & (1 << i)) != 0);
-				p_graphic[p][(!p_reflect[p]? 7-i: i)+64] = ((p_grp[p] & (1 << i)) != 0);
+				p_graphic[p][!p_reflect[p]? 7-i: i] = ((p_graph[p] & (1 << i)) != 0);
+				p_graphic[p][(!p_reflect[p]? 7-i: i)+64] = ((p_graph[p] & (1 << i)) != 0);
 			}
 			break;
 		case 0x5:
 			for(i=0; i<8; i++)
 			{
-				p_graphic[p][(!p_reflect[p]? 7-i: i)*2] = ((p_grp[p] & (1 << i)) != 0);
-				p_graphic[p][(!p_reflect[p]? 7-i: i)*2+1] = ((p_grp[p] & (1 << i)) != 0);
+				p_graphic[p][(!p_reflect[p]? 7-i: i)*2] = ((p_graph[p] & (1 << i)) != 0);
+				p_graphic[p][(!p_reflect[p]? 7-i: i)*2+1] = ((p_graph[p] & (1 << i)) != 0);
 			}
 			break;
 		case 0x6:
 			for(i=0; i<8; i++)
 			{
-				p_graphic[p][!p_reflect[p]? 7-i: i] = ((p_grp[p] & (1 << i)) != 0);
-				p_graphic[p][(!p_reflect[p]? 7-i: i)+32] = ((p_grp[p] & (1 << i)) != 0);
-				p_graphic[p][(!p_reflect[p]? 7-i: i)+64] = ((p_grp[p] & (1 << i)) != 0);
+				p_graphic[p][!p_reflect[p]? 7-i: i] = ((p_graph[p] & (1 << i)) != 0);
+				p_graphic[p][(!p_reflect[p]? 7-i: i)+32] = ((p_graph[p] & (1 << i)) != 0);
+				p_graphic[p][(!p_reflect[p]? 7-i: i)+64] = ((p_graph[p] & (1 << i)) != 0);
 			}
 			break;
 		case 0x7:
 			for(i=0; i<8; i++)
 				for(j=0; j<4; j++)
-					p_graphic[p][(!p_reflect[p]? 7-i: i)*4+j] = ((p_grp[p] & (1 << i)) != 0);
+					p_graphic[p][(!p_reflect[p]? 7-i: i)*4+j] = ((p_graph[p] & (1 << i)) != 0);
 			break;
 	}
 }
@@ -587,13 +606,21 @@ inline void set_registers()
 			break;
 
 		case GRP0:
+			p_grpa[0] = p_grp[0];
 			p_grp[0] = dataset.data;
+			p_grpa[1] = p_grp[1];
 			redraw_player(0);
+			if(p_delay[1])
+				redraw_player(1);
 			break;
 
 		case GRP1:
+			p_grpa[1] = p_grp[1];
 			p_grp[1] = dataset.data;
+			p_grpa[0] = p_grp[0];
 			redraw_player(1);
+			if(p_delay[0])
+				redraw_player(0);
 			break;
 
 		case NUSIZ0:
@@ -633,6 +660,21 @@ inline void set_registers()
 
 		case ENABL:
 			b_enabled = (dataset.data & 0x2) != 0;
+			break;
+
+		/*
+		 * VERTICAL DELAY
+		 */
+		case VDELP0:
+			p_delay[0] = (dataset.data & 0x1);
+			redraw_player(0);
+			redraw_player(1);
+			break;
+
+		case VDELP1:
+			p_delay[1] = (dataset.data & 0x1);
+			redraw_player(0);
+			redraw_player(1);
 			break;
 
 	}
@@ -748,28 +790,28 @@ inline void collisions(int cycles)
 				return 1;
 		return 0;
 	}
-	if(m_enabled[0] && p_grp[1])
+	if(m_enabled[0] && p_graph[1])
 		if(check_collision(MISSILE_0, PLAYER_1))
 			dev_mem_set_direct(CXM0P, dev_mem_get(CXM0P) | 0x80);
-	if(m_enabled[0] && p_grp[0])
+	if(m_enabled[0] && p_graph[0])
 		if(check_collision(MISSILE_0, PLAYER_0))
 			dev_mem_set_direct(CXM0P, dev_mem_get(CXM0P) | 0x40);
-	if(m_enabled[1] && p_grp[0])
+	if(m_enabled[1] && p_graph[0])
 		if(check_collision(MISSILE_1, PLAYER_0))
 			dev_mem_set_direct(CXM1P, dev_mem_get(CXM1P) | 0x80);
-	if(m_enabled[1] && p_grp[1])
+	if(m_enabled[1] && p_graph[1])
 		if(check_collision(MISSILE_1, PLAYER_1))
 			dev_mem_set_direct(CXM1P, dev_mem_get(CXM1P) | 0x40);
-	if(p_grp[0] && pf_enabled)
+	if(p_graph[0] && pf_enabled)
 		if(check_collision(PLAYER_0, PLAYFIELD))
 			dev_mem_set_direct(CXP0FB, dev_mem_get(CXP0FB) | 0x80);
-	if(p_grp[0] && b_enabled)
+	if(p_graph[0] && b_enabled)
 		if(check_collision(PLAYER_0, BALL))
 			dev_mem_set_direct(CXP0FB, dev_mem_get(CXP0FB) | 0x40);
-	if(p_grp[0] && pf_enabled)
+	if(p_graph[0] && pf_enabled)
 		if(check_collision(PLAYER_1, PLAYFIELD))
 			dev_mem_set_direct(CXP1FB, dev_mem_get(CXP1FB) | 0x80);
-	if(p_grp[1] && b_enabled)
+	if(p_graph[1] && b_enabled)
 		if(check_collision(PLAYER_1, BALL))
 			dev_mem_set_direct(CXP1FB, dev_mem_get(CXP1FB) | 0x40);
 	if(m_enabled[0] && pf_enabled)
@@ -787,7 +829,7 @@ inline void collisions(int cycles)
 	if(b_enabled && pf_enabled)
 		if(check_collision(BALL, PLAYFIELD))
 			dev_mem_set_direct(CXBLPF, dev_mem_get(CXBLPF) | 0x80);
-	if(p_grp[0] && p_grp[1])
+	if(p_graph[0] && p_graph[1])
 		if(check_collision(PLAYER_0, PLAYER_1))
 			dev_mem_set_direct(CXPPMM, dev_mem_get(CXPPMM) | 0x80);
 	if(m_enabled[0] && m_enabled[1])
