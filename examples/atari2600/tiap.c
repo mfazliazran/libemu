@@ -146,9 +146,9 @@ EXPORT void dev_video_reset()
 	dev_video_create_palette(256);
 	for(i=0; i<256; i++)
 		dev_video_palette_set_color(i, 
-				colortable[i] & 0xff,
+				(colortable[i] >> 16) & 0xff,
 				(colortable[i] >> 8) & 0xff,
-				(colortable[i] >> 16) & 0xff);	
+				colortable[i] & 0xff);
 
 	/* set joystick as unpressed */
 	dev_mem_set_direct(INPT4, 0x80);
