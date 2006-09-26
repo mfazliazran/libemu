@@ -53,6 +53,7 @@ void emu_video_create_palette(int n_colors);
 void emu_video_palette_set_color(int n_color, int r, int g, int b);
 void emu_video_draw_pixel(int x, int y, long palette_color);
 void emu_video_draw_hline(int x1, int x2, int y, long palette_color);
+void emu_video_set_scale(int w, int h);
 void (*emu_video_reset)();
 void (*emu_video_step)(int cycles);
 int (*emu_video_memory_set)(unsigned long int pos, unsigned char data, int cycles);

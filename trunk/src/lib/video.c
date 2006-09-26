@@ -10,13 +10,14 @@ static GtkWidget *video_window;
 static GtkWidget *video_register[MAX_REGISTERS];
 static gint num_registers;
 static gboolean video_loaded = FALSE;
-static SDL_Color *color;
+//static SDL_Color *color;
 static SDL_Surface *screen, *buffer;
 static gint number_of_colors;
 static gdouble fps;
 static GTimer *timer;
 static gint frame_count = 0;
 static double time_busy = 0.0f;
+static int scale_x, scale_y;
 
 /*
  * PRIVATE FUNCTIONS
@@ -86,8 +87,8 @@ static void monitor_show_hide(GtkToggleButton *item, gpointer data)
 	if(gtk_toggle_button_get_active(item))
 	{
 		SDL_InitSubSystem(SDL_INIT_VIDEO);
-		screen = SDL_SetVideoMode(*emu_video_pixels_x, *emu_video_pixels_y, 8,
-				SDL_HWSURFACE | SDL_HWPALETTE | SDL_DOUBLEBUF);
+		screen = SDL_SetVideoMode(*emu_video_pixels_x * scale_x, *emu_video_pixels_y * scale_y, 8,
+				SDL_HWSURFACE | SDL_HWPALETTE );
 		if(!screen)
 			g_error("A SDL_Screen could not be created (%s)", SDL_GetError());
 		SDL_WM_SetCaption("Monitor", "Monitor");
@@ -141,13 +142,27 @@ void video_update()
  * API
  */
 
+void emu_video_set_scale(int w, int h)
+{
+	scale_x = w;
+	scale_y = h;
+	SDL_FreeSurface(buffer);
+	buffer = SDL_CreateRGBSurface(SDL_HWSURFACE, 
+			*emu_video_pixels_x * scale_x,
+			*emu_video_pixels_y * scale_y, 8, 0, 0, 0, 0);
+}
+
 /* Create a new color palette */
 void emu_video_create_palette(int n_colors)
 {
 	number_of_colors = n_colors;
 
 	// extra
+	/*
+	if(color)
+		g_free(color);
 	color = g_malloc(sizeof(SDL_Color) * n_colors);
+	*/
 }
 
 /* Set a color on the color palette */
@@ -165,7 +180,6 @@ void emu_video_palette_set_color(int n_color, int r, int g, int b)
 	c->g = g;
 	c->b = b;
 	SDL_SetColors(buffer, c, n_color, 1);
-	SDL_SetColors(screen, c, n_color, 1);
 }
 
 /* Draws one pixel in the screen */
@@ -178,16 +192,21 @@ void emu_video_draw_pixel(int x, int y, long palette_color)
 	if(y < 0 || y >= *emu_video_pixels_y)
 		return;
 
+	int s, xx;
+
 	SDL_LockSurface(buffer);
-	p = (Uint8*)buffer->pixels + y * buffer->pitch;
-	p[x] = palette_color;
+	for(s=0; s<scale_y; s++)
+	{
+		p = (Uint8*)buffer->pixels + (y + s) * buffer->pitch;
+		for(xx=0; xx<scale_x; xx++)
+			p[x+xx] = palette_color;
+	}
 	SDL_UnlockSurface(buffer);
 }
 
 /* Draw a horizontal line on the screen */
 void emu_video_draw_hline(int x1, int x2, int y, long palette_color)
 {
-	SDL_Rect r;
 	Uint8 *p;
 	int x;
 
@@ -196,11 +215,25 @@ void emu_video_draw_hline(int x1, int x2, int y, long palette_color)
 	if(y < 0 || y >= *emu_video_pixels_y)
 		return;
 
-	
+	/*
+	SDL_Rect r;
+	int c;
+	r.x = x1;
+	r.y = y;
+	r.h = 1;
+	r.w = x2-x1;
+	c = SDL_MapRGB(buffer->format, color[palette_color].r, color[palette_color].g, color[palette_color].b);
+	SDL_FillRect(buffer, &r, c);
+	*/
+
+	int s;
 	SDL_LockSurface(buffer);
-	p = (Uint8*)buffer->pixels + y * buffer->pitch;
-	for(x=x1; x<x2; x++)
-		p[x] = palette_color;
+	for(s=0; s<scale_y; s++)
+	{
+		p = (Uint8*)buffer->pixels + (y + s) * buffer->pitch;
+		for(x=x1; x<(x2+scale_x-1); x++)
+			p[x] = palette_color;
+	}
 	SDL_UnlockSurface(buffer);
 }
 
@@ -390,6 +423,7 @@ int emu_video_init(char* filename, double video_cycles_per_cpu_cycle, int frames
 	timer = g_timer_new();
 
 	has_video = 1;
+	scale_x = scale_y = 1;
 
 	SDL_InitSubSystem(SDL_INIT_VIDEO);
 	emu_video_reset();
