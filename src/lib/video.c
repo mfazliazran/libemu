@@ -150,6 +150,9 @@ void emu_video_set_scale(int w, int h)
 	buffer = SDL_CreateRGBSurface(SDL_HWSURFACE, 
 			*emu_video_pixels_x * scale_x,
 			*emu_video_pixels_y * scale_y, 8, 0, 0, 0, 0);
+	SDL_InitSubSystem(SDL_INIT_VIDEO);
+	emu_video_reset();
+	SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
 
 /* Create a new color palette */
@@ -197,9 +200,9 @@ void emu_video_draw_pixel(int x, int y, long palette_color)
 	SDL_LockSurface(buffer);
 	for(s=0; s<scale_y; s++)
 	{
-		p = (Uint8*)buffer->pixels + (y + s) * buffer->pitch;
+		p = (Uint8*)buffer->pixels + ((y*scale_y) + s) * buffer->pitch;
 		for(xx=0; xx<scale_x; xx++)
-			p[x+xx] = palette_color;
+			p[(x*scale_x)+xx] = palette_color;
 	}
 	SDL_UnlockSurface(buffer);
 }
@@ -230,8 +233,8 @@ void emu_video_draw_hline(int x1, int x2, int y, long palette_color)
 	SDL_LockSurface(buffer);
 	for(s=0; s<scale_y; s++)
 	{
-		p = (Uint8*)buffer->pixels + (y + s) * buffer->pitch;
-		for(x=x1; x<(x2+scale_x-1); x++)
+		p = (Uint8*)buffer->pixels + ((y*scale_y) + s) * buffer->pitch;
+		for(x=x1*scale_x; x<((x2*scale_x)+scale_x-1); x++)
 			p[x] = palette_color;
 	}
 	SDL_UnlockSurface(buffer);
