@@ -21,6 +21,7 @@ static GtkListStore *store;
 static long int ip, previous_ip;
 static GSList* breakpoints;
 static gchar* previous_reference;
+static gboolean recent_line, recent_vblank;
 glong h_cycles = 0, v_cycles = 0, total_cycles = 0;
 
 /* Prototypes */
@@ -145,6 +146,8 @@ static inline gboolean execute_one_step()
 {
 	int num_cycles, i, video_cycles, pre_y;
 
+	recent_vblank = recent_line = FALSE;
+
 	if(!emu_cpu_step(&num_cycles))
 	{
 		emu_error(g_strdup_printf("Instruction invalid in address 0x%04X!", emu_cpu_ip()));
@@ -183,6 +186,7 @@ static inline gboolean execute_one_step()
 			/* check for hsync */
 			while(*emu_video_pos_x > *emu_video_scanline_cycles)
 			{
+				recent_line = TRUE;
 				execute_devices_step_horizontal(h_cycles);
 				h_cycles = 0;
 				*emu_video_pos_y = *emu_video_pos_y + 1;
@@ -194,7 +198,10 @@ static inline gboolean execute_one_step()
 	/* adjust Y position */
 	if(pre_y <= (*emu_video_scanlines_vblank + *emu_video_pixels_y)
 	&& *emu_video_pos_y > (*emu_video_scanlines_vblank + *emu_video_pixels_y))
+	{
+		recent_vblank = TRUE;
 		emu_video_update_screen();
+	}
 	if(*emu_video_pos_y > (*emu_video_scanlines_vblank + *emu_video_pixels_y + *emu_video_scanlines_overscan))
 		*emu_video_pos_y = 0;
 
@@ -345,6 +352,43 @@ static void cpu_reference_changed(GtkEntry* entry, gpointer data)
 	}
 
 	emu_cpu_set_debugger_reference(emu_cpu_get_debugger_reference());
+}
+
+/* When the next line button is clicked */
+static void cpu_line_clicked(GtkButton* cpu_line, gpointer data)
+{
+	previous_ip = ip;
+
+	do
+	{
+		if(!execute_one_step())
+			return;
+	} while(!recent_line);
+
+	ip = emu_cpu_ip();
+	update_debugger(TRUE);
+	video_update();
+	generic_update();
+	emu_mem_set_reference(emu_mem_get_reference());
+	video_update_partial_screen();	
+}
+
+/* When the next frame button is clicked */
+static void cpu_vblank_clicked(GtkButton* cpu_vblank, gpointer data)
+{
+	previous_ip = ip;
+
+	do
+	{
+		if(!execute_one_step())
+			return;
+	} while(!recent_vblank);
+
+	ip = emu_cpu_ip();
+	update_debugger(TRUE);
+	video_update();
+	generic_update();
+	emu_mem_set_reference(emu_mem_get_reference());
 }
 
 /* When the step button is clicked */
@@ -591,11 +635,13 @@ int emu_cpu_init(char* filename)
 	gchar *path, *type;
 
 	int i;
-	GtkWidget *toolitem[5];
+	GtkWidget *toolitem[8];
 	GtkWidget *vbox1, 
 		    *handlebox,
 		      *toolbar,
 		          *cpu_run_pause,
+			  *cpu_scanline,
+			  *cpu_line,
 		    *hbox1,
 		      *vbox3,
 		        *scroll_debugger,
@@ -692,7 +738,7 @@ int emu_cpu_init(char* filename)
 
 	/* Handle Box */
 	toolbar = gtk_toolbar_new();
-	for(i=0; i<=4; i++)
+	for(i=0; i<8; i++)
 	{
 		toolitem[i] = gtk_tool_item_new();
 		gtk_toolbar_insert(GTK_TOOLBAR(toolbar), GTK_TOOL_ITEM(toolitem[i]), i);
@@ -724,9 +770,17 @@ int emu_cpu_init(char* filename)
 	g_signal_connect_swapped(cpu_step, "clicked",
 			G_CALLBACK(cpu_step_clicked), NULL);
 	gtk_container_add(GTK_CONTAINER(toolitem[1]), cpu_step);
-	cpu_vblank = button_with_stock_image("Go to Next _Frame", GTK_STOCK_JUSTIFY_FILL, FALSE);
-	gtk_tooltips_set_tip(tips, cpu_vblank, "Run the microprocessor until it reaches a VBLANK", "");
-	gtk_container_add(GTK_CONTAINER(toolitem[2]), cpu_vblank);
+	cpu_line = button_with_stock_image("Next _Line", GTK_STOCK_INDENT, FALSE);
+	g_signal_connect_swapped(cpu_line, "clicked",
+			G_CALLBACK(cpu_line_clicked), NULL);
+	gtk_tooltips_set_tip(tips, cpu_line, "Run the microprocessor until it reaches a new scanline", "");
+	gtk_container_add(GTK_CONTAINER(toolitem[2]), cpu_line);
+
+	cpu_vblank = button_with_stock_image("Next _Frame", GTK_STOCK_JUSTIFY_FILL, FALSE);
+	g_signal_connect_swapped(cpu_vblank, "clicked",
+			G_CALLBACK(cpu_vblank_clicked), NULL);
+	gtk_tooltips_set_tip(tips, cpu_vblank, "Run the microprocessor until it reaches a new frame", "");
+	gtk_container_add(GTK_CONTAINER(toolitem[3]), cpu_vblank);
 
 	gtk_container_add(GTK_CONTAINER(handlebox), toolbar);
 
@@ -852,6 +906,8 @@ int emu_cpu_init(char* filename)
 	num_flags = i;
 
 	gtk_widget_show_all(vbox1);
+
+	recent_line = recent_vblank = FALSE;
 
 	emu_cpu_set_debugger_reference(0);
 	ip = previous_ip = 0;
