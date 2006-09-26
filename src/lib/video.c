@@ -242,7 +242,7 @@ void emu_video_draw_hline(int x1, int x2, int y, long palette_color)
 	for(s=0; s<scale_y; s++)
 	{
 		p = (Uint8*)buffer->pixels + ((y*scale_y) + s) * buffer->pitch;
-		for(x=x1*scale_x; x<((x2*scale_x)+scale_x-1); x++)
+		for(x=x1*scale_x; x<(x2*scale_x); x++)
 			p[x] = palette_color;
 	}
 	SDL_UnlockSurface(buffer);
