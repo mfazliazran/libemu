@@ -44,8 +44,25 @@ EXPORT int dev_video_wait_hsync = 0;
 char tmp[1000];
 
 /*
+ * PROTOTYPES
+ */
+EXPORT void dev_video_step(int cycles);
+
+/*
  * LOCAL VARIABLES
  */
+
+typedef enum
+{
+	PLAYFIELD = 0x1,
+	PLAYER_0  = 0x2,
+	PLAYER_1  = 0x4,
+	MISSILE_0 = 0x8,
+	MISSILE_1 = 0x10,
+	BALL      = 0x20,
+	NUM_TYPES = 6
+} TYPE;
+
 typedef struct
 {
 	unsigned long pos;
@@ -56,9 +73,6 @@ DATASET dataset, dataset2;
 
 /* synchronization */
 static int vsync, vblank;
-
-/* background */
-static int bg_color;
 
 /* playfield */
 static int pf[20];
@@ -78,7 +92,6 @@ static unsigned char p_grp[2];
 static unsigned char p_grpa[2]; // used for 6-digit trick
 static unsigned char p_graph[2];
 static int p_delay[2];
-static int p_graphic[2][72];
 
 /* missiles */
 static int m_pos[2];
@@ -86,7 +99,6 @@ static int m_mov[2];
 static int m_size[2];
 static int m_enabled[2];
 static int m_lock[2];
-static int m_graphic[2][8];
 
 /* ball */
 static int b_pos;
@@ -96,38 +108,29 @@ static int b_enabled;
 static int b_graphic[8];
 
 /* collision detection */
-static unsigned char col[160];
+typedef struct
+{
+	int bg;
+	int p[2];
+	int m[2];
+	int pf;
+	int bl;
+	unsigned char px;
+} PIXEL;
+PIXEL line[160];
 
 /*
  * INLINE FUNCTIONS
  */
 inline int x() { return (dev_video_pos_x - 68); }
 inline int y() { return (dev_video_pos_y - 40); }
-inline int x_right(int x) { 
-	if(x > 160)
-		return 160;
-	else
-		return x;
-}
-inline int x_left(int j) { 
-	if(j < x())
-		return x();
-	else
-		return j;
-}
-inline int MINOR(int x, int y) {
-	if(x < y)
-		return x;
-	else
-		return y;
-}
 
 /* You must implement this function.
  *
  * This function initializes the device. */
 EXPORT void dev_video_reset()
 {
-	int i, j;
+	int i;
 
 	dev_video_create_palette(256);
 	for(i=0; i<256; i++)
@@ -151,7 +154,6 @@ EXPORT void dev_video_reset()
 
 	/* initialize variables */
 	vsync = vblank = 0;
-	bg_color = 0;
 	pf_color = pf_score = pf_priority = pf_reflect = 0;
 	for(i=0; i<20; i++)
 		pf[i] = 0;
@@ -166,142 +168,56 @@ EXPORT void dev_video_reset()
 		p_delay[i] = 0;
 		p_size[i] = 0;
 		p_reflect[i] = 0;
-		for(j=0; j<72; j++)
-			p_graphic[i][j] = 0;
 		m_pos[i] = 80;
 		m_mov[i] = 0;
 		m_size[i] = 1;
 		m_enabled[i] = 0;
 		m_lock[i] = 0;
-		m_graphic[i][0] = 1;
-		for(j=1; j<8; j++)
-			m_graphic[i][j] = 0;
 	}
 	b_pos = 80;
 	b_mov = 0;
 	b_size = 1;
 	b_enabled = 0;
 	b_graphic[0] = 1;
-	for(j=1; j<8; j++)
-		b_graphic[j] = 0;
+	for(i=0; i<160; i++)
+	{
+		line[i].bg   = 0;
+		line[i].pf   = 0;
+		line[i].bl   = 0;
+		line[i].m[0] = 0;
+		line[i].m[1] = 0;
+		line[i].p[0] = 0;
+		line[i].p[1] = 0;
+		line[i].px   = 0;
+	}
 }
 
-/* redraw the player graphic variable */
 inline void redraw_player(int p)
 {
-	int i, j;
 
-	for(i=0; i<72; i++)
-		p_graphic[p][i] = 0;
-
-	if(p_delay[p] == 0)
-	{
-		p_graph[p] = p_grp[p];
-		if (p_grp[p] == 0)
-			return;
-	}
-	if(p_delay[p] == 1)
-	{
-		p_graph[p] = p_grpa[p];
-		if(p_grpa[p] == 0)
-			return;
-	}
-
-	switch(p_size[p])
-	{
-		case 0x0:
-			for(i=0; i<8; i++)
-				p_graphic[p][!p_reflect[p]? 7-i: i] = ((p_graph[p] & (1 << i)) != 0);
-			break;
-		case 0x1:
-			for(i=0; i<8; i++)
-			{
-				p_graphic[p][!p_reflect[p]? 7-i: i] = ((p_graph[p] & (1 << i)) != 0);
-				p_graphic[p][(!p_reflect[p]? 7-i: i)+16] = ((p_graph[p] & (1 << i)) != 0);
-			}
-			break;
-		case 0x2:
-			for(i=0; i<8; i++)
-			{
-				p_graphic[p][!p_reflect[p]? 7-i: i] = ((p_graph[p] & (1 << i)) != 0);
-				p_graphic[p][(!p_reflect[p]? 7-i: i)+32] = ((p_graph[p] & (1 << i)) != 0);
-			}
-			break;
-		case 0x3:
-			for(i=0; i<8; i++)
-			{
-				p_graphic[p][!p_reflect[p]? 7-i: i] = ((p_graph[p] & (1 << i)) != 0);
-				p_graphic[p][(!p_reflect[p]? 7-i: i)+16] = ((p_graph[p] & (1 << i)) != 0);
-				p_graphic[p][(!p_reflect[p]? 7-i: i)+32] = ((p_graph[p] & (1 << i)) != 0);
-			}
-			break;
-		case 0x4:
-			for(i=0; i<8; i++)
-			{
-				p_graphic[p][!p_reflect[p]? 7-i: i] = ((p_graph[p] & (1 << i)) != 0);
-				p_graphic[p][(!p_reflect[p]? 7-i: i)+64] = ((p_graph[p] & (1 << i)) != 0);
-			}
-			break;
-		case 0x5:
-			for(i=0; i<8; i++)
-			{
-				p_graphic[p][(!p_reflect[p]? 7-i: i)*2] = ((p_graph[p] & (1 << i)) != 0);
-				p_graphic[p][(!p_reflect[p]? 7-i: i)*2+1] = ((p_graph[p] & (1 << i)) != 0);
-			}
-			break;
-		case 0x6:
-			for(i=0; i<8; i++)
-			{
-				p_graphic[p][!p_reflect[p]? 7-i: i] = ((p_graph[p] & (1 << i)) != 0);
-				p_graphic[p][(!p_reflect[p]? 7-i: i)+32] = ((p_graph[p] & (1 << i)) != 0);
-				p_graphic[p][(!p_reflect[p]? 7-i: i)+64] = ((p_graph[p] & (1 << i)) != 0);
-			}
-			break;
-		case 0x7:
-			for(i=0; i<8; i++)
-				for(j=0; j<4; j++)
-					p_graphic[p][(!p_reflect[p]? 7-i: i)*4+j] = ((p_graph[p] & (1 << i)) != 0);
-			break;
-	}
 }
 
-/* redraw the missile graphic variable */
-inline void redraw_missile(int m)
+inline void redraw_missile(int p)
 {
-	int i;
-	
-	for(i=1; i<8; i++)
-		m_graphic[m][i] = 0;
 
-	switch(m_size[m])
-	{
-		case 2: m_graphic[m][1] = 1;
-		case 3: m_graphic[m][2] = 1;
-			m_graphic[m][3] = 1;
-		case 4: m_graphic[m][4] = 1;
-			m_graphic[m][5] = 1;
-			m_graphic[m][6] = 1;
-			m_graphic[m][7] = 1;
-	}
 }
 
-/* redraw the ball graphic variable */
-inline void redraw_ball()
+inline void redraw_pf()
 {
 	int i;
-	
-	for(i=1; i<8; i++)
-		b_graphic[i] = 0;
+	int pf1_color = pf_priority ? pf_color : (pf_score ? p_color[0] : pf_color);
+	int pf2_color = pf_priority ? pf_color : (pf_score? p_color[1]: pf_color);
 
-	switch(b_size)
+	for(i=0; i<20; i++)
 	{
-		case 2: b_graphic[1] = 1;
-		case 3: b_graphic[2] = 1;
-			b_graphic[3] = 1;
-		case 4: b_graphic[4] = 1;
-			b_graphic[5] = 1;
-			b_graphic[6] = 1;
-			b_graphic[7] = 1;
+		if(pf[i])
+			line[(i*4)].pf = line[(i*4)+1].pf = line[(i*4)+2].pf = line[(i*4)+3].pf = pf1_color;
+		else
+			line[(i*4)].pf = line[(i*4)+1].pf = line[(i*4)+2].pf = line[(i*4)+3].pf = -1;
+		if(pf[pf_reflect ? 19-i : i])
+			line[((i+20)*4)].pf = line[((i+20)*4)+1].pf = line[((i+20)*4)+2].pf = line[((i+20)*4)+3].pf = pf2_color;
+		else
+			line[((i+20)*4)].pf = line[((i+20)*4)+1].pf = line[((i+20)*4)+2].pf = line[((i+20)*4)+3].pf = -1;
 	}
 }
 
@@ -341,15 +257,21 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data, int cycles)
 		 * PLAYER POSITION
 		 */
 		case RESP0: /* Reset player 0 */
-			p_pos[0] = x_right(x() + cycles + 5);
+			p_pos[0] = x() + cycles + 5;
 			if(p_pos[0] < 3)
 				p_pos[0] = 3;
+			if(p_pos[0] > 160)
+				p_pos[0] = 160;
+			redraw_player(0);
 			break;
 
 		case RESP1: /* Reset player 1 */
-			p_pos[1] = x_right(x() + cycles + 5);
+			p_pos[1] = x() + cycles + 5;
 			if(p_pos[1] < 3)
 				p_pos[1] = 3;
+			if(p_pos[1] > 160)
+				p_pos[1] = 160;
+			redraw_player(1);
 			break;
 
 		case HMP0: /* Horizontal movement of player 1 */
@@ -380,23 +302,31 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data, int cycles)
 		 * MISSILE POSITION
 		 */
 		case RESM0: /* Reset missile 0 */
-			m_pos[0] = x_right(x() + cycles + 5);
+			m_pos[0] = x() + cycles + 5;
 			if(m_pos[0] < 2)
 				m_pos[0] = 2;
+			if(m_pos[0] > 160)
+				m_pos[0] = 160;
+			redraw_missile(0);
 			break;
 
 		case RESM1: /* Reset missile 1 */
-			m_pos[1] = x_right(x() + cycles + 5);
+			m_pos[1] = x() + cycles + 5;
 			if(m_pos[1] < 2)
 				m_pos[1] = 2;
+			if(m_pos[1] < 160)
+				m_pos[1] = 160;
+			redraw_missile(1);
 			break;
 
 		case RESMP0: /* Reset missile 0 to player 0 */
 			m_lock[0] = (dataset.data & 0x2) != 0;
+			redraw_missile(0);
 			break;
 
 		case RESMP1: /* Reset missile 1 to player 1 */
 			m_lock[1] = (dataset.data & 0x2) != 0;
+			redraw_missile(1);
 			break;
 
 		case HMM0: /* Horizontal movement of missile 0 */
@@ -427,9 +357,12 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data, int cycles)
 		 * BALL POSITION
 		 */
 		case RESBL: /* Reset ball */
-			b_pos = x_right(x() + cycles + 5);
+			b_pos = x() + cycles + 5;
 			if(b_pos < 2)
 				b_pos = 2;
+			if(b_pos > 160)
+				b_pos = 160;
+			redraw_pf();
 			break;
 
 		case HMBL: /* Horizontal movement of missile 0 */
@@ -485,6 +418,16 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data, int cycles)
 				b_pos = 0;
 			else if (b_pos < 0)
 				b_pos = 159;
+			if(p_mov[0])
+				redraw_player(0);
+			if(p_mov[1])
+				redraw_player(1);
+			if(m_mov[0])
+				redraw_missile(0);
+			if(m_mov[1])
+				redraw_missile(1);
+			if(b_mov)
+				redraw_pf();
 			break;
 
 		case HMCLR: /* horizontal movement clear */
@@ -508,8 +451,6 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data, int cycles)
 			dev_mem_set_direct(CXM1FB, 0x0);
 			dev_mem_set_direct(CXBLPF, 0x0);
 			dev_mem_set_direct(CXPPMM, 0x0);
-			for(i=0; i<=cycles; i++)
-				col[i] = 0;
 			break;
 
 		default:
@@ -542,7 +483,8 @@ inline void set_registers()
 		 * BACKGROUND
 		 */
 		case COLUBK: /* Background color */
-			bg_color = dataset.data;
+			for(i=0; i<160; i++)
+				line[i].bg = dataset.data;
 			break;
 
 		/*
@@ -550,6 +492,7 @@ inline void set_registers()
 		 */
 		case COLUPF: /* Playfield color */
 			pf_color = dataset.data;
+			redraw_pf();
 			break;
 
 		case CTRLPF: /* Control playfield */
@@ -557,24 +500,28 @@ inline void set_registers()
 			pf_score = dataset.data & 0x2;
 			pf_priority = dataset.data & 0x4;
 			b_size = (dataset.data & 0x30) >> 5;
+			redraw_pf();
 			break;
 
 		case PF0: /* Playfield graphics 0 */
 			for(i=4; i<8; i++)
 				pf[i-4] = (dataset.data & (1 << i)) >> i;
 			check_playfield();
+			redraw_pf();
 			break;
 
 		case PF1: /* Playfield graphics 1 */
 			for(i=0; i<8; i++)
 				pf[i+4] = (dataset.data & (0x80 >> i)) != 0;
 			check_playfield();
+			redraw_pf();
 			break;
 
 		case PF2: /* Playfield graphics 2 */
 			for(i=0; i<8; i++)
 				pf[i+12] = (dataset.data & (1 << i)) >> i;
 			check_playfield();
+			redraw_pf();
 			break;
 
 		/*
@@ -666,105 +613,11 @@ inline void set_registers()
 	dataset.cycles = dataset2.cycles;
 }
 
-/* draw on the screen, and fill the collision variable */
-inline void drln(int x1, int x2, int color, TYPE type)
-{
-	int i;
-
-	/* draw on the screen */
-	if(x1 == x2)
-	{
-		// dev_video_draw_pixel(x1, y(), color);
-		dev_video_draw_hline(x1, x1+1, y(), color);
-		col[x1] |= type;
-	}
-	else
-	{
-		dev_video_draw_hline(x1, x2, y(), color);
-		for(i=x1; i<x2; i++)
-			col[i] |= type;
-	}
-}
-
-/* draw the playfield and the ball */
-inline void draw_pf(int x1, int x2, int priority)
-{
-	inline int xs_right(int x)  { if(x < x1) return x1; else return x; }
-	inline int xs_left(int x) { if(x > x2) return x2; else return x; }
-
-	int i;
-	
-	// left side of the screen (optimize!)
-	for(i=0; i<20; i++)
-		if(pf[i])
-			if((i)*4 >= x1-4 && (i+1)*4 <= x2+4)
-				drln(
-						xs_left(i*4), 
-						xs_right(i*4+4), 
-						priority == 1? pf_color : (pf_score? p_color[0]: pf_color),
-						PLAYFIELD);
-	// right side of the screen (optimize!)
-	for(i=0; i<20; i++)
-		if(pf[pf_reflect? 19-i : i])
-			if((i+20)*4 >= x1-4 && (i+21)*4 <= x2+4)
-				drln(
-						xs_left((i+20)*4),
-						xs_right((i+20)*4+4), 
-						priority == 1? pf_color : (pf_score? p_color[1]: pf_color),
-						PLAYFIELD);
-	// draw ball
-	if(b_enabled)
-		for(i=0; i<8; i++)
-			if(b_graphic[i])
-				if((i + b_pos) % 160 >= x1 && (i + b_pos) % 160 <= x2)
-					drln(
-						xs_left((i + b_pos) % 160), 
-						xs_right((i + b_pos) % 160), 
-						priority == 1? pf_color : (pf_score? p_color[1]: pf_color),
-						BALL);
-}
-
-/* draw the missile */
-inline void draw_missile(int m, int x1, int x2)
-{
-	inline int xs_right(int x)  { if(x < x1) return x1; else return x; }
-	inline int xs_left(int x) { if(x > x2) return x2; else return x; }
-
-	int i;
-	
-	// draw missile
-	for(i=0; i<8; i++)
-		if(m_graphic[m][i])
-			if((i + m_pos[m]) % 160 >= x1 && (i + m_pos[m]) % 160 <= x2)
-				drln(
-						xs_left((i + m_pos[m]) % 160), 
-						xs_right((i + m_pos[m]) % 160), 
-						p_color[m],
-						m == 0? MISSILE_0: MISSILE_1);
-}
-
-/* draw the player */
-inline void draw_player(int p, int x1, int x2)
-{
-	inline int xs_right(int x)  { if(x < x1) return x1; else return x; }
-	inline int xs_left(int x) { if(x > x2) return x2; else return x; }
-
-	int i;
-	
-	// draw player
-	for(i=0; i<72; i++)
-		if(p_graphic[p][i])
-			if((i + p_pos[p]) % 160 >= x1 && (i + p_pos[p]) % 160 <= x2)
-				drln(
-						xs_left((i + p_pos[p]) % 160), 
-						xs_right((i + p_pos[p]) % 160), 
-						p_color[p],
-						p == 0? PLAYER_0: PLAYER_1);
-}
 
 /* check for collisions */
 inline void collisions(int cycles)
 {
+	/*
 	// check collisions
 	inline int check_collision(TYPE type1, TYPE type2) {
 		int k;
@@ -821,6 +674,7 @@ inline void collisions(int cycles)
 	int i;
 	for(i=0; i<=cycles; i++)
 		col[i] = 0;
+	*/
 }
 
 /* Executes one step. Read the info on dev_video_sync_type above to understand
@@ -835,33 +689,36 @@ EXPORT void dev_video_step(int cycles)
 	if(y() < 0 || y() > 191 || x()+cycles < 0)
 		return;
 
-	/* draw black if vblank is on */
-	if(vblank)
-	{
-		dev_video_draw_hline(x_left(x()), x_right(x()+cycles), y(), 0);
-		return;
-	}
+	int i, x1, x2;
+	if(x() < 0)
+		x1 = 0;
+	else
+		x1 = x();
+	if(x()+cycles > 160)
+		x2 = 160;
+	else
+		x2 = x() + cycles;	
+	for(i=x1; i<x2; i++)
+		if(i >= 0 && i < 160)
+		{
+			line[i].px = line[i].bg;
+			if(pf_priority)
+			{
+				if(line[i].pf != -1)
+					line[i].px = line[i].pf;
+				else
+					line[i].px = 0;
+			}
 
-	/* draw background */
-	dev_video_draw_hline(x_left(x()), x_right(x()+cycles), y(), bg_color);
 
-	/* draw playfield if priority low */
-	if(!pf_priority)
-		draw_pf(x_left(x()), x_right(x()+cycles), 0);
-
-	/* draw missiles and players */
-	if(m_enabled[1])
-		draw_missile(1, x_left(x()), x_right(x()+cycles));
-	if(p_grp[1])
-		draw_player(1, x_left(x()), x_right(x()+cycles));
-	if(m_enabled[0])
-		draw_missile(0, x_left(x()), x_right(x()+cycles));
-	if(p_grp[0])
-		draw_player(0, x_left(x()), x_right(x()+cycles));
-
-	/* draw playfield if priority high */
-	if(pf_priority)
-		draw_pf(x_left(x()), x_right(x()+cycles), 1);
+			if(!pf_priority)
+			{
+				if(line[i].pf != -1)
+					line[i].px = line[i].pf;
+				else
+					line[i].px = 0;
+			}
+		}
 
 	/* check collisions */
 	collisions(cycles);
@@ -869,7 +726,10 @@ EXPORT void dev_video_step(int cycles)
 
 EXPORT void dev_video_scanline(int cycles)
 {
-
+	int i;
+	if(y()>=0 && y() < 192)
+		for(i=0; i<160; i++)
+			dev_video_draw_hline(i, i+1, y(), line[i].px);
 }
 
 /* The following functions (inside the DEBUG directive) are used only by the
@@ -894,28 +754,6 @@ EXPORT char* dev_video_debug_name(int n)
 		case  1: return "y";
 		case  2: return "VSYNC";
 		case  3: return "VBLANK";
-		case  4: return "COLUBK";
-		case  5: return "PF0";
-		case  6: return "PF1";
-		case  7: return "PF2";
-		case  8: return "COLUPF";
-		case  9: return "PF Reflect";
-		case 10: return "PF Score";
-		case 11: return "PF Priority";
-		case 12: return "COLUP0";
-		case 13: return "NUSIZ0";
-		case 14: return "REFP0";
-		case 15: return "GRP0";
-		case 16: return "P Pos 0";
-		case 17: return "P Mov 0";
-		case 18: return "P Enabl 0";
-		case 19: return "COLUP1";
-		case 20: return "NUSIZ1";
-		case 21: return "REFP1";
-		case 22: return "GRP1";
-		case 23: return "P Pos 1";
-		case 24: return "P Mov 1";
-		case 25: return "P Enabl 1";
 
 		case 26: return "CXM0P";
 		case 27: return "CXM1P";
@@ -937,8 +775,6 @@ EXPORT char* dev_video_debug_name(int n)
  * register n must match the register n passed on the function register_name. */
 EXPORT char* dev_video_debug(int n)
 {
-	int i;
-
 	switch(n)
 	{
 		case 0:
@@ -952,78 +788,6 @@ EXPORT char* dev_video_debug(int n)
 			break;
 		case 3:
 			sprintf(info, "%d", vblank);
-			break;
-		case 4:
-			sprintf(info, "0x%02x", bg_color);
-			break;
-		case 5:
-			for(i=0; i<4; i++)
-				info[i] = pf[i] + '0';
-			info[i] = '\0';
-			break;
-		case 6:
-			for(i=0; i<8; i++)
-				info[i] = pf[i+4] + '0';
-			info[i] = '\0';
-			break;
-		case 7:
-			for(i=0; i<8; i++)
-				info[i] = pf[i+12] + '0';
-			info[i] = '\0';
-			break;
-		case 8:
-			sprintf(info, "0x%02x", pf_color);
-			break;
-		case 9:
-			sprintf(info, "%d", pf_reflect);
-			break;
-		case 10:
-			sprintf(info, "%d", pf_score);
-			break;
-		case 11:
-			sprintf(info, "%d", pf_priority);
-			break;
-		case 12:
-			sprintf(info, "0x%02x", p_color[0]);
-			break;
-		case 13:
-			sprintf(info, "%d", p_size[0]);
-			break;
-		case 14:
-			sprintf(info, "%d", p_reflect[0]);
-			break;
-		case 15:
-			sprintf(info, "0x%02x", p_grp[0]);
-			break;
-		case 16:
-			sprintf(info, "%d", p_pos[0]);
-			break;
-		case 17:
-			sprintf(info, "%d", p_mov[0]);
-			break;
-		case 18:
-			sprintf(info, "%d", p_grp[0] != 0);
-			break;
-		case 19:
-			sprintf(info, "0x%02x", p_color[1]);
-			break;
-		case 20:
-			sprintf(info, "%d", p_size[1]);
-			break;
-		case 21:
-			sprintf(info, "%d", p_reflect[1]);
-			break;
-		case 22:
-			sprintf(info, "0x%02x", p_grp[1]);
-			break;
-		case 23:
-			sprintf(info, "%d", p_pos[1]);
-			break;
-		case 24:
-			sprintf(info, "%d", p_mov[1]);
-			break;
-		case 25:
-			sprintf(info, "%d", p_grp[1] != 0);
 			break;
 		case 26:
 			sprintf(info, "0x%02x", dev_mem_get(CXM0P));
