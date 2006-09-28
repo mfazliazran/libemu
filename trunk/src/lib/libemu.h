@@ -56,6 +56,7 @@ void emu_video_draw_hline(int x1, int x2, int y, long palette_color);
 void emu_video_set_scale(int w, int h);
 void (*emu_video_reset)();
 void (*emu_video_step)(int cycles);
+void (*emu_video_scanline)(int cycles);
 int (*emu_video_memory_set)(unsigned long int pos, unsigned char data, int cycles);
 char* (*emu_video_debug_name)(int n);
 char* (*emu_video_debug)(int n);

@@ -205,6 +205,14 @@ void emu_video_draw_pixel(int x, int y, long palette_color)
 
 	int s, xx;
 
+	SDL_Rect r;
+	r.x = x*scale_x;
+	r.y = y*scale_y;
+	r.h = scale_y;
+	r.w = scale_x;
+	SDL_FillRect(buffer, &r, palette_color);
+
+	/*
 	SDL_LockSurface(buffer);
 	for(s=0; s<scale_y; s++)
 	{
@@ -213,6 +221,7 @@ void emu_video_draw_pixel(int x, int y, long palette_color)
 			p[(x*scale_x)+xx] = palette_color;
 	}
 	SDL_UnlockSurface(buffer);
+	*/
 }
 
 /* Draw a horizontal line on the screen */
@@ -226,17 +235,14 @@ void emu_video_draw_hline(int x1, int x2, int y, long palette_color)
 	if(y < 0 || y >= *emu_video_pixels_y)
 		return;
 
-	/*
 	SDL_Rect r;
-	int c;
-	r.x = x1;
-	r.y = y;
-	r.h = 1;
-	r.w = x2-x1;
-	c = SDL_MapRGB(buffer->format, color[palette_color].r, color[palette_color].g, color[palette_color].b);
-	SDL_FillRect(buffer, &r, c);
-	*/
+	r.x = x1*scale_x;
+	r.y = y*scale_y;
+	r.h = scale_y;
+	r.w = (x2-x1) * scale_x;
+	SDL_FillRect(buffer, &r, palette_color);
 
+	/*
 	int s;
 	SDL_LockSurface(buffer);
 	for(s=0; s<scale_y; s++)
@@ -246,6 +252,7 @@ void emu_video_draw_hline(int x1, int x2, int y, long palette_color)
 			p[x] = palette_color;
 	}
 	SDL_UnlockSurface(buffer);
+	*/
 }
 
 /* Updates the TV screen */
@@ -364,6 +371,8 @@ int emu_video_init(char* filename, double video_cycles_per_cpu_cycle, int frames
 		g_error("variable dev_video_reset not defined in %s", path);
 	if(!g_module_symbol(video_mod, "dev_video_step", (void*)&emu_video_step))
 		g_error("variable dev_video_step not defined in %s", path);
+	if(!g_module_symbol(video_mod, "dev_video_scanline", (void*)&emu_video_scanline))
+		g_error("variable dev_video_scanline not defined in %s", path);
 	if(!g_module_symbol(video_mod, "dev_video_memory_set", (void*)&emu_video_memory_set))
 		g_error("variable dev_video_memory_set not defined in %s", path);
 	if(!g_module_symbol(video_mod, "dev_video_debug_name", (void*)&emu_video_debug_name))

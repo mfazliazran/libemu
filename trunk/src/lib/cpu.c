@@ -124,8 +124,6 @@ static void update_debugger(gboolean find_ip)
 static inline void execute_devices_step_exact(int num_cycles)
 {
 	int i;
-	if(emu_video_sync == EXACT_SYNC)
-		emu_video_step(emu_video_cycles * num_cycles);
 	for(i=1; i<generic_count; i++)
 		if(emu_generic_sync[i] == EXACT_SYNC)
 			emu_generic_step[i](num_cycles * emu_generic_cycles[i]);
@@ -134,8 +132,6 @@ static inline void execute_devices_step_exact(int num_cycles)
 static inline void execute_devices_step_horizontal(int num_cycles)
 {
 	int i;
-	if(emu_video_sync == HORIZONTAL_SYNC)
-		emu_video_step(emu_video_cycles * num_cycles);
 	for(i=1; i<generic_count; i++)
 		if(emu_generic_sync[i] == HORIZONTAL_SYNC)
 			emu_generic_step[i](num_cycles * emu_generic_cycles[i]);
@@ -148,6 +144,7 @@ static inline gboolean execute_one_step()
 
 	recent_vblank = recent_line = FALSE;
 
+	/* executes CPU step */
 	if(!emu_cpu_step(&num_cycles))
 	{
 		emu_error(g_strdup_printf("Instruction invalid in address 0x%04X!", emu_cpu_ip()));
@@ -157,10 +154,15 @@ static inline gboolean execute_one_step()
 		return FALSE;
 	}
 
+	/* execute video and devices step */
+	if(emu_video_sync == EXACT_SYNC)
+		emu_video_step(emu_video_cycles * num_cycles);
 	execute_devices_step_exact(num_cycles);
+
 	pre_y = *emu_video_pos_y;
 	h_cycles += num_cycles;
 
+	/* if a VSYNC was requested */
 	if(*emu_video_wait_vsync != 0)
 	{
 		if(*emu_video_pos_y > *emu_video_scanlines_vblank
@@ -172,21 +174,26 @@ static inline gboolean execute_one_step()
 	}
 	else
 	{
+		/* if a HSYNC was requested */
 		if (*emu_video_wait_hsync != 0)
 		{
+			recent_line = TRUE;
+			emu_video_scanline(emu_video_cycles * h_cycles);
 			execute_devices_step_horizontal(h_cycles);
 			h_cycles = 0;
 			*emu_video_pos_x = 0;
 			*emu_video_pos_y = *emu_video_pos_y + 1;
 			*emu_video_wait_hsync = 0;
 		}
-		else
+		else /* if it is a regular step */
 		{
 			*emu_video_pos_x = *emu_video_pos_x + (num_cycles * emu_video_cycles);
-			/* check for hsync */
+			
+			/* if a HSYNC happened */
 			while(*emu_video_pos_x > *emu_video_scanline_cycles)
 			{
 				recent_line = TRUE;
+				emu_video_scanline(emu_video_cycles * h_cycles);
 				execute_devices_step_horizontal(h_cycles);
 				h_cycles = 0;
 				*emu_video_pos_y = *emu_video_pos_y + 1;
@@ -195,7 +202,7 @@ static inline gboolean execute_one_step()
 		}
 	}
 
-	/* adjust Y position */
+	/* adjust Y position, and checks if needs to update screen */
 	if(pre_y <= (*emu_video_scanlines_vblank + *emu_video_pixels_y)
 	&& *emu_video_pos_y > (*emu_video_scanlines_vblank + *emu_video_pixels_y))
 	{
