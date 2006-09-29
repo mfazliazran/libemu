@@ -44,8 +44,25 @@ EXPORT int dev_video_wait_hsync = 0;
 char tmp[1000];
 
 /*
+ * PROTOTYPES
+ */
+EXPORT void dev_video_step(int cycles);
+
+/*
  * LOCAL VARIABLES
  */
+
+typedef enum
+{
+	PLAYFIELD = 0x1,
+	PLAYER_0  = 0x2,
+	PLAYER_1  = 0x4,
+	MISSILE_0 = 0x8,
+	MISSILE_1 = 0x10,
+	BALL      = 0x20,
+	NUM_TYPES = 6
+} TYPE;
+
 typedef struct
 {
 	unsigned long pos;
@@ -109,11 +126,11 @@ inline int x_right(int x) {
 	else
 		return x;
 }
-inline int x_left(int j) { 
-	if(j < x())
-		return x();
+inline int x_left(int x) { 
+	if(x < 0)
+		return 0;
 	else
-		return j;
+		return x;
 }
 inline int MINOR(int x, int y) {
 	if(x < y)
@@ -275,13 +292,13 @@ inline void redraw_missile(int m)
 
 	switch(m_size[m])
 	{
-		case 2: m_graphic[m][1] = 1;
-		case 3: m_graphic[m][2] = 1;
-			m_graphic[m][3] = 1;
 		case 4: m_graphic[m][4] = 1;
 			m_graphic[m][5] = 1;
 			m_graphic[m][6] = 1;
 			m_graphic[m][7] = 1;
+		case 3: m_graphic[m][2] = 1;
+			m_graphic[m][3] = 1;
+		case 2: m_graphic[m][1] = 1;
 	}
 }
 
@@ -295,13 +312,13 @@ inline void redraw_ball()
 
 	switch(b_size)
 	{
-		case 2: b_graphic[1] = 1;
-		case 3: b_graphic[2] = 1;
-			b_graphic[3] = 1;
-		case 4: b_graphic[4] = 1;
+		case 3: b_graphic[4] = 1;
 			b_graphic[5] = 1;
 			b_graphic[6] = 1;
 			b_graphic[7] = 1;
+		case 2: b_graphic[2] = 1;
+			b_graphic[3] = 1;
+		case 1: b_graphic[1] = 1;
 	}
 }
 
@@ -867,11 +884,6 @@ EXPORT void dev_video_step(int cycles)
 	collisions(cycles);
 }
 
-EXPORT void dev_video_scanline(int cycles)
-{
-
-}
-
 /* The following functions (inside the DEBUG directive) are used only by the
  * debugger, and will be stripped off when the final version is created. */
 #ifdef DEBUG
@@ -1056,3 +1068,8 @@ EXPORT char* dev_video_debug(int n)
 }
 
 #endif /* DEBUG */
+
+EXPORT void dev_video_scanline(int cycles)
+{
+
+}
