@@ -88,6 +88,7 @@ static int p_pos[2];
 static int p_mov[2];
 static int p_size[2];
 static int p_reflect[2];
+static int p_enabled[2];
 static unsigned char p_grp[2];
 static unsigned char p_grpa[2]; // used for 6-digit trick
 static unsigned char p_graph[2];
@@ -168,6 +169,7 @@ EXPORT void dev_video_reset()
 		p_delay[i] = 0;
 		p_size[i] = 0;
 		p_reflect[i] = 0;
+		p_enabled[i] = 0;
 		m_pos[i] = 80;
 		m_mov[i] = 0;
 		m_size[i] = 0;
@@ -188,13 +190,68 @@ EXPORT void dev_video_reset()
 		line[i].m[1] = -1;
 		line[i].p[0] = -1;
 		line[i].p[1] = -1;
-		line[i].px   = 0;
+		line[i].px   =  0;
 	}
 }
 
 inline void redraw_player(int p)
 {
+	/* NUSIZ?
+	 * COLUP?
+	 * REFP?
+	 * GRP? */
+	
+	unsigned char grp = (p_delay[p] == 0 ? p_grp[p] : p_grpa[p]);
 
+	inline void draw_player(int pos)
+	{
+		int init, step, i, j;
+		init = p_reflect[p] ? 0 : 8;
+		step = p_reflect[p] ? 1 : -1;
+		for(i=pos, j=init; i<pos+8; i++, j+=step)
+			if((grp >> j & 1) == 1)
+				line[i%160].p[p] = p_color[p];
+	}
+
+	int i;
+	for(i=0; i<160; i++)
+		line[i].p[p] = -1;
+
+	if(grp == 0)
+		return;
+	
+	switch(p_size[p])
+	{
+		case 0x0:
+			draw_player(p_pos[p]);
+			break;
+		case 0x1:
+			draw_player(p_pos[p]);
+			draw_player(p_pos[p]+16);
+			break;
+		case 0x2:
+			draw_player(p_pos[p]);
+			draw_player(p_pos[p]+32);
+			break;
+		case 0x3:
+			draw_player(p_pos[p]);
+			draw_player(p_pos[p]+16);
+			draw_player(p_pos[p]+32);
+			break;
+		case 0x4:
+			draw_player(p_pos[p]);
+			draw_player(p_pos[p]+64);
+			break;
+		case 0x5:
+			break;
+		case 0x6:
+			draw_player(p_pos[p]);
+			draw_player(p_pos[p]+32);
+			draw_player(p_pos[p]+64);
+			break;
+		case 0x7:
+			break;
+	}
 }
 
 inline void redraw_missile(int p)
@@ -205,14 +262,14 @@ inline void redraw_missile(int p)
 	if(m_enabled[p])
 		switch(m_size[p])
 		{
-			case 3: line[(b_pos+4)%160].m[p] = p_color[p];
-				line[(b_pos+5)%160].m[p] = p_color[p];
-				line[(b_pos+6)%160].m[p] = p_color[p];
-				line[(b_pos+7)%160].m[p] = p_color[p];
-			case 2: line[(b_pos+2)%160].m[p] = p_color[p];
-				line[(b_pos+3)%160].m[p] = p_color[p];
-			case 1: line[(b_pos+1)%160].m[p] = p_color[p];
-			case 0: line[b_pos%160].m[p]     = p_color[p];
+			case 3: line[(m_pos[p]+4)%160].m[p] = p_color[p];
+				line[(m_pos[p]+5)%160].m[p] = p_color[p];
+				line[(m_pos[p]+6)%160].m[p] = p_color[p];
+				line[(m_pos[p]+7)%160].m[p] = p_color[p];
+			case 2: line[(m_pos[p]+2)%160].m[p] = p_color[p];
+				line[(m_pos[p]+3)%160].m[p] = p_color[p];
+			case 1: line[(m_pos[p]+1)%160].m[p] = p_color[p];
+			case 0: line[m_pos[p]%160].m[p]     = p_color[p];
 		}
 }
 
@@ -745,7 +802,7 @@ EXPORT void dev_video_step(int cycles)
 		if(i >= 0 && i < 160)
 		{
 			line[i].px = line[i].bg;
-			if(pf_priority)
+			if(!pf_priority)
 			{
 				if(line[i].pf != -1)
 					line[i].px = line[i].pf;
@@ -753,13 +810,18 @@ EXPORT void dev_video_step(int cycles)
 					line[i].px = line[i].bl;
 			}
 
+			
 			if(line[i].m[1] != -1)
 				line[i].px = line[i].m[1];
+			if(line[i].p[1] != -1)
+				line[i].px = line[i].p[1];
 
 			if(line[i].m[0] != -1)
 				line[i].px = line[i].m[0];
+			if(line[i].p[0] != -1)
+				line[i].px = line[i].p[0];
 
-			if(!pf_priority)
+			if(pf_priority)
 			{
 				if(line[i].pf != -1)
 					line[i].px = line[i].pf;

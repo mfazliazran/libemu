@@ -870,11 +870,11 @@ EXPORT void dev_video_step(int cycles)
 	if(m_enabled[1])
 		draw_missile(1, x_left(x()), x_right(x()+cycles));
 	if(p_grp[1])
-		draw_player(1, x_left(x()), x_right(x()+cycles));
+		draw_player(1, x_left(x()), x_right(x()+cycles-1));
 	if(m_enabled[0])
 		draw_missile(0, x_left(x()), x_right(x()+cycles));
 	if(p_grp[0])
-		draw_player(0, x_left(x()), x_right(x()+cycles));
+		draw_player(0, x_left(x()), x_right(x()+cycles-1));
 
 	/* draw playfield if priority high */
 	if(pf_priority)
