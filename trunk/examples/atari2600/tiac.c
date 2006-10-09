@@ -206,7 +206,7 @@ inline void redraw_player(int p)
 	inline void draw_player(int pos)
 	{
 		int init, step, i, j;
-		init = p_reflect[p] ? 0 : 8;
+		init = p_reflect[p] ? 0 : 7;
 		step = p_reflect[p] ? 1 : -1;
 		for(i=pos, j=init; i<pos+8; i++, j+=step)
 			if((grp >> j & 1) == 1)
@@ -243,6 +243,7 @@ inline void redraw_player(int p)
 			draw_player(p_pos[p]+64);
 			break;
 		case 0x5:
+			/* TODO */
 			break;
 		case 0x6:
 			draw_player(p_pos[p]);
@@ -250,6 +251,7 @@ inline void redraw_player(int p)
 			draw_player(p_pos[p]+64);
 			break;
 		case 0x7:
+			/* TODO */
 			break;
 	}
 }
@@ -454,7 +456,7 @@ EXPORT int dev_video_memory_set(long pos, unsigned char data, int cycles)
 			redraw_pf();
 			break;
 
-		case HMBL: /* Horizontal movement of missile 0 */
+		case HMBL: /* Horizontal movement of ball */
 			{
 				int hmbl = data >> 4;
 				if(hmbl >= 1 && hmbl <= 7)
@@ -837,9 +839,25 @@ EXPORT void dev_video_step(int cycles)
 EXPORT void dev_video_scanline(int cycles)
 {
 	int i;
+	int cc, cx, cl;
+	cx = 0;
+	cl = 0;
+	cc = -1;
 	if(y()>=0 && y() < 192)
+	{
 		for(i=0; i<160; i++)
-			dev_video_draw_hline(i, i+1, y(), line[i].px);
+		{
+			if(line[i].px != cc)
+			{
+				dev_video_draw_hline(cx, cx+cl, y(), cc);
+				cx = i;
+				cc = line[i].px;
+			}
+			cl++;
+		}
+		if(cx < 159)
+			dev_video_draw_hline(cx, 160, y(), cc);
+	}
 }
 
 /* The following functions (inside the DEBUG directive) are used only by the
@@ -864,7 +882,28 @@ EXPORT char* dev_video_debug_name(int n)
 		case  1: return "y";
 		case  2: return "VSYNC";
 		case  3: return "VBLANK";
-		case  4: return "BL(en/sz)";
+		case  4: return "COLUBK";
+		case  5: return "PF0";
+		case  6: return "PF1";
+		case  7: return "PF2";
+		case  8: return "COLUPF";
+		case  9: return "PF Reflect";
+		case 10: return "PF Score";
+		case 11: return "PF Priority";
+		case 12: return "COLUP0";
+		case 13: return "NUSIZ0";
+		case 14: return "REFP0";
+		case 15: return "GRP0";
+		case 16: return "P Pos 0";
+		case 17: return "P Mov 0";
+		case 18: return "P Enabl 0";
+		case 19: return "COLUP1";
+		case 20: return "NUSIZ1";
+		case 21: return "REFP1";
+		case 22: return "GRP1";
+		case 23: return "P Pos 1";
+		case 24: return "P Mov 1";
+		case 25: return "P Enabl 1";
 
 		case 26: return "CXM0P";
 		case 27: return "CXM1P";
@@ -886,6 +925,8 @@ EXPORT char* dev_video_debug_name(int n)
  * register n must match the register n passed on the function register_name. */
 EXPORT char* dev_video_debug(int n)
 {
+	int i;
+
 	switch(n)
 	{
 		case 0:
@@ -901,7 +942,76 @@ EXPORT char* dev_video_debug(int n)
 			sprintf(info, "%d", vblank);
 			break;
 		case 4:
-			sprintf(info, "%d %d", b_enabled, b_size);
+			sprintf(info, "N/A");
+			break;
+		case 5:
+			for(i=0; i<4; i++)
+				info[i] = pf[i] + '0';
+			info[i] = '\0';
+			break;
+		case 6:
+			for(i=0; i<8; i++)
+				info[i] = pf[i+4] + '0';
+			info[i] = '\0';
+			break;
+		case 7:
+			for(i=0; i<8; i++)
+				info[i] = pf[i+12] + '0';
+			info[i] = '\0';
+			break;
+		case 8:
+			sprintf(info, "0x%02x", pf_color);
+			break;
+		case 9:
+			sprintf(info, "%d", pf_reflect);
+			break;
+		case 10:
+			sprintf(info, "%d", pf_score);
+			break;
+		case 11:
+			sprintf(info, "%d", pf_priority);
+			break;
+		case 12:
+			sprintf(info, "0x%02x", p_color[0]);
+			break;
+		case 13:
+			sprintf(info, "%d", p_size[0]);
+			break;
+		case 14:
+			sprintf(info, "%d", p_reflect[0]);
+			break;
+		case 15:
+			sprintf(info, "0x%02x", p_grp[0]);
+			break;
+		case 16:
+			sprintf(info, "%d", p_pos[0]);
+			break;
+		case 17:
+			sprintf(info, "%d", p_mov[0]);
+			break;
+		case 18:
+			sprintf(info, "%d", p_grp[0] != 0);
+			break;
+		case 19:
+			sprintf(info, "0x%02x", p_color[1]);
+			break;
+		case 20:
+			sprintf(info, "%d", p_size[1]);
+			break;
+		case 21:
+			sprintf(info, "%d", p_reflect[1]);
+			break;
+		case 22:
+			sprintf(info, "0x%02x", p_grp[1]);
+			break;
+		case 23:
+			sprintf(info, "%d", p_pos[1]);
+			break;
+		case 24:
+			sprintf(info, "%d", p_mov[1]);
+			break;
+		case 25:
+			sprintf(info, "%d", p_grp[1] != 0);
 			break;
 		case 26:
 			sprintf(info, "0x%02x", dev_mem_get(CXM0P));
