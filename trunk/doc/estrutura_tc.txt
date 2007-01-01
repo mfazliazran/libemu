@@ -91,30 +91,31 @@
 4.3.3 Debuggers
 4.4 Inflexibilidade do emulador para rodar diferentes tipos de software (ex. hblank)
 
-5 libemu - uma biblioteca para a criação de emuladores
-5.1 Emuladores dos componentes compilados como bibliotecas vinculadas
-5.1.1 Filosofia de funcionamento
-5.1.2 Ferramentas auxiliares
-5.1.2.1 emutouch
-5.1.2.2 emucc
-5.1.2.3 emucheck
-5.2 Desenvolvimento de uma biblioteca vinculada
-5.2.1 Filosofia de funcionamento
-5.2.1.1 Carregamento dos dispositivos
-5.2.1.1 Interface gráfica
-5.2.1.2 Debuggers
-5.3 Implementação da biblioteca e das ferramentas auxiliares
+5 Plano de ação
+5.1 Filosofia de funcionamento
+5.1.1 libemu
+5.1.2 emutouch
+5.1.3 emucc
+5.1.4 emucheck
+5.2 Ferramentas utilizadas
+5.3 Projetos semelhantes
 
-6 API da biblioteca
-6.1 Emulador principal
-6.1.1 Memória
-6.1.2 Carregamento de memória ROM
-6.1.2 Dispositivos de entrada
-6.2 CPU
-6.3 Gráficos
-6.4 Som (?)
-6.5 Dispositivos de armazenamento (?)
+6 Funcionamento da biblioteca
+6.1 Carregamento dinâmico de módulos
+6.2 Interface de usuário
+6.3 Memória RAM
+6.3.1 Debugger da memória
+6.4 Microprocessador
+6.4.1 Funcionamento interno (debugger, etc...)
+6.5 Placa de vídeo
+6.5.1 Funcionamento interno (saída de vídeo, etc...)
 6.6 Outros dispositivos
+6.6.1 Funcionamento interno
+6.7 Sistema de entrada
+6.7.1 Funcionamento interno
+6.8 Memória ROM
+6.8.1 Funcionmento Interno
+6.9 Ciclo de operação
 
 7 Criação de um emulador de Atari 2600 usando a biblioteca libemu
 7.1 Histórico do Atari 2600
@@ -122,7 +123,6 @@
 7.2.1 CPU - MOS 6507
 7.2.2 Gráficos - TIA 
 7.2.2.1 "Truques" de programação
-7.2.3 Som - TIA (?)
 7.2.4 Dispositivo genérico - PIA 6532
 7.2.5 Memória
 7.2.5.1 Mapas de memória
