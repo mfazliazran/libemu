@@ -99,10 +99,11 @@
 5.1.4 emucheck
 5.2 Funções da biblioteca
 5.2.1 Conexão de módulos
-5.2.2 Funções
+5.2.2 Funções internas e externas
 5.2.3 Debuggers
 5.3 Ferramentas utilizadas
-5.4 Projetos semelhantes
+5.4 Emulador resultante (?)
+5.5 Projetos semelhantes
 
 6 Funcionamento da biblioteca
 6.1 Carregamento dinâmico de módulos
