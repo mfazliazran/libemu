@@ -21,7 +21,7 @@ int main(int argv, char* argc)
 }
 }}}
 
-=== emu_main() ===
+=== void emu_main() ===
 
 Passes the program control to EDK. It should be the last function to be called.
 
@@ -30,7 +30,7 @@ Example:
 emu_main();
 }}}
 
-=== emu_reset_soft() ===
+=== void emu_reset_soft() ===
 
 Makes a soft reset on the emulator. This will perform a reset in each device, but the memory will not be clean.
 
