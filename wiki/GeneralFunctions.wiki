@@ -1,0 +1,11 @@
+This are the General Emulator Functions.
+
+= Functions that must be implemented by the programmer =
+
+_None._
+
+= Functions that are provided by the EDK =
+
+=== void emu_init(const char* name, int argc, char** argv) ===
+
+This function initializes the EDK system. It must be the first function to be called.
