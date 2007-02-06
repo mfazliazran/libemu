@@ -1,4 +1,5 @@
 #summary Screeshots of the project.
+#labels Featured,Screenshots
 
 = Screenshots =
 
