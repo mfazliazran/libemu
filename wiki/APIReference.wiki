@@ -23,20 +23,10 @@ You don't need to understand why is that, but if you must, you can read [WhyEmuD
 
 = API Reference =
 
-== General functions ==
-
-The programmer must implement the following general functions:
-
-  * _None._
-
-The EDK provides the following CPU functions:
-
-  *`void emu_init (const char * name, int argc, char ** argv)`*
-
-  This functions does this and that.
-
-  * `void` [emu_main] `()`
-  * `void` [emu_reset_soft] `()`
-  * `void` [emu_message] `(char* message)`
-  * `void` [emu_error] `(char* message)`
-
+  * [GeneralFunctions General Emulator Functions]
+  * [CPUFunctions CPU Functions]
+  * [VideoFunctions Video Card and Monitor Functions]
+  * [OtherFunctions Other Devices Functions]
+  * [RAMFunctions RAM Functions]
+  * [ROMFunctions ROM Functions]
+  * [InputFunctions Input Functions]
