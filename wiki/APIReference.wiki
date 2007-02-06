@@ -1,4 +1,5 @@
-¿#summary API Reference of the EDK project.
+#summary API Reference of the EDK project.
+#labels Featured,Phase-Implementation
 
 *_THIS PAGE IS UNDER CONSTRUCTION_*
 
@@ -30,7 +31,10 @@ The programmer must implement the following general functions:
 
 The EDK provides the following CPU functions:
 
-  * `void` [emu_init] `(const char * name, int argc, char ** argv)`
+  *`void emu_init (const char * name, int argc, char ** argv)`*
+
+  This functions does this and that.
+
   * `void` [emu_main] `()`
   * `void` [emu_reset_soft] `()`
   * `void` [emu_message] `(char* message)`
