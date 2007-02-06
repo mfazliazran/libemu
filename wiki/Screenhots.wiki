@@ -1,0 +1,5 @@
+#summary Screeshots of the project.
+
+= Main menu =
+
+http://libemu.googlecode.com/svn/trunk/doc/principal.png
