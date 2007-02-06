@@ -8,8 +8,28 @@ The [AtariTutorial Atari Tutorial] describes the process of writing a real machi
 
 = Philosophy =
 
-The work philosophy is described in the [Philosophy] page.
+The EDK work philosophy is described in the [Philosophy] page. Its understanding is essential for writing a emulator.
+
+= Tools =
+
+EDK is made of 5 different tools. Check the [Tools] page to understand what they do.
+
+== emu/dev difference in functions name ==
+
+All functions in the API begin with *emu_* or *dev_*. In fact, they are the same functions; the only difference is that when they're called from the emulator, they should be called with the *emu_* prefix. If they are called from one of the devices, they sould be called with the *dev_* prefix.
 
 = API Reference =
 
-_Coming soon._
+== General functions ==
+
+The programmer must implement the following general functions:
+
+  * _None._
+
+The EDK provides the following CPU functions:
+
+  * void [emu_init](const char* name, int argc, char** argv)
+  * void [emu_main]()
+  * void [emu_reset_soft]()
+  * void [emu_message](char* message)
+  * void [emu_error](char* message)
