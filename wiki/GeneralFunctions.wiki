@@ -1,4 +1,4 @@
-This are the General Emulator Functions.
+#summary Document describing the generic emulator functions.
 
 = Functions that must be implemented by the programmer =
 
@@ -8,4 +8,13 @@ _None._
 
 === void emu_init(const char* name, int argc, char** argv) ===
 
-This function initializes the EDK system. It must be the first function to be called from the [EmulatorFile emulator file]. The argument *name* provides the name 
+This function initializes the EDK system. It must be the first function to be called from the [EmulatorFile emulator file]. The argument *name* provides the name that'll appear as the title of the main window. The arguments *argc* and *argv* are those passed by the main function.
+
+Example:
+{{{
+int main(int argv, char* argc)
+{
+    emu_init("IBM PC", argc, argv);
+    return 0;
+}
+}}}
