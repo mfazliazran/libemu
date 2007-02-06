@@ -1,4 +1,4 @@
-#summary API Reference
+#summary API Reference of the EDK project.
 
 = API Reference =
 
