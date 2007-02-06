@@ -15,7 +15,7 @@ The EDK work philosophy is described in the [Philosophy] page. Its understanding
 
 EDK is made of 5 different tools. Check the [Tools] page to understand what they do.
 
-== emu/dev difference in functions name ==
+= Function Prefixes =
 
 All functions in the API begin with `emu_` or `dev_`. In fact, they are the same functions; the only difference is that when they're called from the emulator, they should be called with the `emu_` prefix. If they are called from one of the devices, they sould be called with the `dev_` prefix.
 
