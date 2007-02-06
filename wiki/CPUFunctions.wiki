@@ -118,6 +118,7 @@ EXPORT char* dev_cpu_debug(unsigned long addr, int *num_cycles, int *bytes)
 	}
 	return buffer;	
 }
+}}}
 
 === EXPORT void dev_cpu_reset() ===
 
