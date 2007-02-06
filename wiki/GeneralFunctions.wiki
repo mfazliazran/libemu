@@ -8,4 +8,4 @@ _None._
 
 === void emu_init(const char* name, int argc, char** argv) ===
 
-This function initializes the EDK system. It must be the first function to be called.
+This function initializes the EDK system. It must be the first function to be called from the [EmulatorFile emulator file]. The argument *name* provides the name 
