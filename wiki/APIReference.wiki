@@ -1,4 +1,4 @@
-#summary API Reference of the EDK project.
+﻿#summary Document describing the API Reference of the EDK project.
 #labels Featured,Phase-Implementation
 
 *_THIS PAGE IS UNDER CONSTRUCTION_*
@@ -24,6 +24,11 @@ You don't need to understand why is that, but if you must, you can read [WhyEmuD
 = API Reference =
 
   * [GeneralFunctions General Emulator Functions]
+    * emu_init
+    * emu_main
+    * emu_reset_soft
+    * emu_message
+    * emu_error
   * [CPUFunctions CPU Functions]
   * [VideoFunctions Video Card and Monitor Functions]
   * [OtherFunctions Other Devices Functions]
