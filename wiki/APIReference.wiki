@@ -1,4 +1,14 @@
-#summary API Reference of the EDK project.
+﻿#summary API Reference of the EDK project.
+
+*_THIS PAGE IS UNDER CONSTRUCTION_*
+
+This is a reference page. If you never wrote a emulator before, you probably need to read the [ComputerTutorial Computer Tutorial] page. If you already wrote a emulator and want to write your first emulator, check the [EmulatorTutoral Emulator Tutorial].
+
+The [AtariTutorial Atari Tutorial] describes the process of writing a real machine emulator.
+
+= Philosophy =
+
+The work philosophy is described in the [Philosophy] page.
 
 = API Reference =
 
