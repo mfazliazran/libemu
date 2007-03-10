@@ -100,26 +100,22 @@
 
 6 Funcionamento da biblioteca
 
-5.2 Funções da biblioteca
-5.2.1 Conexão de módulos
-5.2.2 Funções internas e externas
-5.2.3 Debuggers
-
-6.1 Carregamento dinâmico de módulos
-6.2 Interface de usuário
-6.3 Memória RAM
-6.3.1 Debugger da memória
-6.4 Microprocessador
-6.4.1 Funcionamento interno (debugger, etc...)
-6.5 Placa de vídeo
-6.5.1 Funcionamento interno (saída de vídeo, etc...)
-6.6 Outros dispositivos
-6.6.1 Funcionamento interno
-6.7 Sistema de entrada
-6.7.1 Funcionamento interno
-6.8 Memória ROM
-6.8.1 Funcionmento Interno
-6.9 Ciclo de operação
+. Carregamento dinâmico de módulos
+. Memória RAM
+.. Debugger da memória
+. Microprocessador
+.. Funcionamento interno (debugger, etc...)
+. Placa de vídeo
+.. Funcionamento interno (saída de vídeo, etc...)
+. Outros dispositivos
+.. Funcionamento interno
+. Sistema de entrada
+.. Funcionamento interno
+. Memória ROM
+.. Funcionmento Interno
+. Ciclo de operação
+. Interface de usuário
+. Debuggers
 
 7 Criação de um emulador de Atari 2600 usando a biblioteca libemu
 7.1 Histórico do Atari 2600
