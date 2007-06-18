@@ -65,7 +65,7 @@ int main(int argc, char** argv)
 	/* Initialize components */
 	emu_mem_init_k(64);
 	emu_cpu_init("6502");
-	tia = emu_video_init("tiap", 3, 60);
+	tia = emu_video_init("tiac", 3, 60);
 	emu_video_set_scale(2, 1);
 	pia = emu_generic_init("pia", 1);
 	emu_mem_map_add(tia, 0x0, 0x7f);
