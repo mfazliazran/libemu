@@ -717,66 +717,43 @@ inline void set_registers()
 
 
 /* check for collisions */
-inline void collisions(int cycles)
+inline void collisions(int x1, int x2)
 {
-	/*
-	// check collisions
-	inline int check_collision(TYPE type1, TYPE type2) {
-		int k;
-		for(k=0; k<MINOR(cycles, 192); k++)
-			if((col[k] & (type1 | type2)) == (type1 | type2))
-				return 1;
-		return 0;
-	}
-	if(m_enabled[0] && p_graph[1])
-		if(check_collision(MISSILE_0, PLAYER_1))
-			dev_mem_set_direct(CXM0P, dev_mem_get(CXM0P) | 0x80);
-	if(m_enabled[0] && p_graph[0])
-		if(check_collision(MISSILE_0, PLAYER_0))
-			dev_mem_set_direct(CXM0P, dev_mem_get(CXM0P) | 0x40);
-	if(m_enabled[1] && p_graph[0])
-		if(check_collision(MISSILE_1, PLAYER_0))
-			dev_mem_set_direct(CXM1P, dev_mem_get(CXM1P) | 0x80);
-	if(m_enabled[1] && p_graph[1])
-		if(check_collision(MISSILE_1, PLAYER_1))
-			dev_mem_set_direct(CXM1P, dev_mem_get(CXM1P) | 0x40);
-	if(p_graph[0] && pf_enabled)
-		if(check_collision(PLAYER_0, PLAYFIELD))
-			dev_mem_set_direct(CXP0FB, dev_mem_get(CXP0FB) | 0x80);
-	if(p_graph[0] && b_enabled)
-		if(check_collision(PLAYER_0, BALL))
-			dev_mem_set_direct(CXP0FB, dev_mem_get(CXP0FB) | 0x40);
-	if(p_graph[0] && pf_enabled)
-		if(check_collision(PLAYER_1, PLAYFIELD))
-			dev_mem_set_direct(CXP1FB, dev_mem_get(CXP1FB) | 0x80);
-	if(p_graph[1] && b_enabled)
-		if(check_collision(PLAYER_1, BALL))
-			dev_mem_set_direct(CXP1FB, dev_mem_get(CXP1FB) | 0x40);
-	if(m_enabled[0] && pf_enabled)
-		if(check_collision(MISSILE_0, PLAYFIELD))
-			dev_mem_set_direct(CXM0FB, dev_mem_get(CXM0FB) | 0x80);
-	if(m_enabled[0] && b_enabled)
-		if(check_collision(MISSILE_0, BALL))
-			dev_mem_set_direct(CXM0FB, dev_mem_get(CXM0FB) | 0x40);
-	if(m_enabled[1] && pf_enabled)
-		if(check_collision(MISSILE_1, PLAYFIELD))
-			dev_mem_set_direct(CXM1FB, dev_mem_get(CXM1FB) | 0x80);
-	if(m_enabled[1] && b_enabled)
-		if(check_collision(MISSILE_1, BALL))
-			dev_mem_set_direct(CXM1FB, dev_mem_get(CXM1FB) | 0x40);
-	if(b_enabled && pf_enabled)
-		if(check_collision(BALL, PLAYFIELD))
-			dev_mem_set_direct(CXBLPF, dev_mem_get(CXBLPF) | 0x80);
-	if(p_graph[0] && p_graph[1])
-		if(check_collision(PLAYER_0, PLAYER_1))
-			dev_mem_set_direct(CXPPMM, dev_mem_get(CXPPMM) | 0x80);
-	if(m_enabled[0] && m_enabled[1])
-		if(check_collision(MISSILE_0, MISSILE_0))
-			dev_mem_set_direct(CXPPMM, dev_mem_get(CXPPMM) | 0x40);
 	int i;
-	for(i=0; i<=cycles; i++)
-		col[i] = 0;
-	*/
+	for(i=x1; i<x2; i++)
+		if(i >= 0 && i < 160)
+		{
+			if(/*m_enabled[0] && p_graph[1] &&*/ line[i].m[0] != -1 && line[i].p[1] != -1)
+				dev_mem_set_direct(CXM0P, dev_mem_get(CXM0P) | 0x80);
+			if(/*m_enabled[0] && p_graph[0] &&*/ line[i].m[0] != -1 && line[i].p[0] != -1)
+				dev_mem_set_direct(CXM0P, dev_mem_get(CXM0P) | 0x40);
+			if(/*m_enabled[1] && p_graph[0] &&*/ line[i].m[1] != -1 && line[i].p[0] != -1)
+				dev_mem_set_direct(CXM1P, dev_mem_get(CXM1P) | 0x80);
+			if(/*m_enabled[1] && p_graph[1] &&*/ line[i].m[1] != -1 && line[i].p[1] != -1)
+				dev_mem_set_direct(CXM1P, dev_mem_get(CXM1P) | 0x40);
+			if(/*p_graph[0] && pf_enabled &&*/ line[i].p[0] != -1 && line[i].pf != -1)
+				dev_mem_set_direct(CXP0FB, dev_mem_get(CXP0FB) | 0x80);
+			if(/*p_graph[0] && b_enabled &&*/ line[i].p[0] != -1 && line[i].bl != -1)
+				dev_mem_set_direct(CXP0FB, dev_mem_get(CXP0FB) | 0x40);
+			if(/*p_graph[0] && pf_enabled &&*/ line[i].p[1] != -1 && line[i].pf != -1)
+				dev_mem_set_direct(CXP1FB, dev_mem_get(CXP1FB) | 0x80);
+			if(/*p_graph[1] && b_enabled &&*/ line[i].p[1] != -1 && line[i].bl != -1)
+				dev_mem_set_direct(CXP1FB, dev_mem_get(CXP1FB) | 0x40);
+			if(/*m_enabled[0] && pf_enabled &&*/ line[i].m[0] != -1 && line[i].pf != -1)
+				dev_mem_set_direct(CXM0FB, dev_mem_get(CXM0FB) | 0x80);
+			if(/*m_enabled[0] && b_enabled &&*/ line[i].m[0] != -1 && line[i].bl != -1)
+				dev_mem_set_direct(CXM0FB, dev_mem_get(CXM0FB) | 0x40);
+			if(/*m_enabled[1] && pf_enabled &&*/ line[i].m[1] != -1 && line[i].pf != -1)
+				dev_mem_set_direct(CXM1FB, dev_mem_get(CXM1FB) | 0x80);
+			if(/*m_enabled[1] && b_enabled &&*/ line[i].m[1] != -1 && line[i].bl != -1)
+				dev_mem_set_direct(CXM1FB, dev_mem_get(CXM1FB) | 0x40);
+			if(/*b_enabled && pf_enabled &&*/ line[i].bl != -1 && line[i].pf != -1)
+				dev_mem_set_direct(CXBLPF, dev_mem_get(CXBLPF) | 0x80);
+			if(/*p_graph[0] && p_graph[1] &&*/ line[i].p[0] != -1 && line[i].p[1] != -1)
+				dev_mem_set_direct(CXPPMM, dev_mem_get(CXPPMM) | 0x80);
+			if(/*m_enabled[0] && m_enabled[1] &&*/ line[i].m[0] && line[i].m[1])
+				dev_mem_set_direct(CXPPMM, dev_mem_get(CXPPMM) | 0x40);
+		}
 }
 
 /* Executes one step. Read the info on dev_video_sync_type above to understand
@@ -799,7 +776,7 @@ EXPORT void dev_video_step(int cycles)
 	if(x()+cycles > 160)
 		x2 = 160;
 	else
-		x2 = x() + cycles;	
+		x2 = x() + cycles;
 	for(i=x1; i<x2; i++)
 		if(i >= 0 && i < 160)
 		{
@@ -833,7 +810,8 @@ EXPORT void dev_video_step(int cycles)
 		}
 
 	/* check collisions */
-	collisions(cycles);
+	collisions(x1, x2);
+
 }
 
 EXPORT void dev_video_scanline(int cycles)
